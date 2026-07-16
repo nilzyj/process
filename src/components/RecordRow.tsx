@@ -33,6 +33,11 @@ export default function RecordRow({ record, onEdit, onDelete, onProgressPlus }: 
   const progressPct = hasProgress && record.total_episode! > 0
     ? Math.min(100, Math.round((record.current_episode! / record.total_episode!) * 100))
     : null;
+  const barColor = progressPct == null ? '#22d3ee'
+    : progressPct >= 100 ? '#22c55e'
+    : progressPct >= 66 ? '#06b6d4'
+    : progressPct >= 33 ? '#f97316'
+    : '#f43f5e';
 
   return (
     <div className="record-row" onClick={handleClick}>
@@ -72,7 +77,7 @@ export default function RecordRow({ record, onEdit, onDelete, onProgressPlus }: 
               /{record.total_episode}
             </span>
             <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+              <div className="progress-fill" style={{ width: `${progressPct}%`, background: `linear-gradient(90deg, ${barColor}, ${barColor}dd)` }} />
             </div>
           </div>
         ) : record.status === '已完成' ? (
