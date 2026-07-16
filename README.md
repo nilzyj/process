@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# Process
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+一款基于 Tauri v2 的媒体记录管理桌面应用。追踪电影、动漫、电视剧、书籍、纪录片、播客等观看/阅读进度。
 
-Currently, two official plugins are available:
+## 功能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **媒体追踪** — 记录名称、类型、状态、进度、标签等
+- **搜索筛选** — 按关键词、类型、状态快速筛选
+- **统计看板** — 类型分布、状态分布、完成率
+- **数据持久化** — 连接远程 MySQL 数据库存储
 
-## React Compiler
+## 技术栈
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| 层 | 技术 |
+|---|---|
+| 桌面壳 | Tauri v2 |
+| 前端 | React + TypeScript + Vite |
+| 后端 | Rust (sqlx) |
+| 数据库 | MySQL |
 
-## Expanding the Oxlint configuration
+## 开发
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run tauri:dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 构建
+
+```bash
+npm run tauri:build
+```
+
+构建产物位于 `src-tauri/target/release/bundle/`。
