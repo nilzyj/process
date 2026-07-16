@@ -65,6 +65,7 @@ input, textarea, select {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  background: #000;
 }
 
 .app-header {
@@ -611,6 +612,19 @@ input, textarea, select {
 
 .empty-state p {
   font-size: 14px;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* List info bar */

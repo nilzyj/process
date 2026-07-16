@@ -17,8 +17,10 @@ pub async fn connect(config: &DbConfig) -> Result<MySqlPool> {
 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
+        .acquire_timeout(std::time::Duration::from_secs(8))
         .connect_with(opts)
-        .await?;
+        .await
+        .map_err(|e| anyhow::anyhow!("数据库连接超时(8s): {}", e))?;
 
     Ok(pool)
 }

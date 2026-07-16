@@ -10,7 +10,6 @@ type Page = 'home' | 'stats';
 
 export default function App() {
   const [connected, setConnected] = useState(false);
-  const [checking, setChecking] = useState(true);
   const [page, setPage] = useState<Page>('home');
   const [showSetup, setShowSetup] = useState(false);
 
@@ -26,8 +25,6 @@ export default function App() {
         }
       } catch {
         setShowSetup(true);
-      } finally {
-        setChecking(false);
       }
     };
     check();
@@ -66,7 +63,7 @@ export default function App() {
       </header>
 
       <div className="app-content">
-        {page === 'home' ? <Home connected={connected} checking={checking} /> : <Stats />}
+        {page === 'home' ? <Home connected={connected} /> : <Stats />}
       </div>
     </div>
   );
