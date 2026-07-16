@@ -48,6 +48,12 @@ export default function RecordForm({ record, onSave, onClose }: Props) {
   const update = (k: keyof NewRecord, v: string | number | null) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
+  const parseDatetime = (raw: string): string | null => {
+    const m = raw.replace('T', ' ').match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (!m) return null;
+    return `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}:${m[6] ?? '00'}`;
+  };
+
   const handleSubmit = () => {
     if (!form.record_name.trim()) return;
     if (record) {
@@ -125,7 +131,7 @@ export default function RecordForm({ record, onSave, onClose }: Props) {
 
           <div className="form-group">
             <label>完成时间</label>
-            <input type="datetime-local" value={form.end_time ? form.end_time.slice(0, 16) : ''} onChange={(e) => update('end_time', e.target.value ? e.target.value + ':00' : null)} />
+            <input type="text" value={form.end_time ? form.end_time.replace('T', ' ') : ''} onChange={(e) => update('end_time', parseDatetime(e.target.value))} placeholder="YYYY-MM-DD HH:mm:ss" />
           </div>
 
           <div className="form-group">
