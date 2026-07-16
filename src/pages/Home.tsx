@@ -59,6 +59,35 @@ export default function Home({ connected }: Props) {
     }
   };
 
+  const handleProgressPlus = async (record: MediaRecord) => {
+    if (record.current_episode == null || record.total_episode == null) return;
+    if (record.status === '已完成') return;
+
+    const next = record.current_episode + 1;
+    const done = next >= record.total_episode;
+    try {
+      await invoke('update_record', {
+        record: {
+          id: record.id,
+          record_name: record.record_name,
+          season: record.season,
+          remark: record.remark,
+          media_type: record.media_type,
+          status: done ? '已完成' : record.status,
+          end_time: record.end_time,
+          country: record.country,
+          tags: record.tags,
+          current_episode: next,
+          total_episode: record.total_episode,
+          year: record.year,
+        },
+      });
+      fetchRecords();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     try {
       await invoke('delete_record', { id });
@@ -126,6 +155,7 @@ export default function Home({ connected }: Props) {
               record={r}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onProgressPlus={handleProgressPlus}
             />
           ))
         )}

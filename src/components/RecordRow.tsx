@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import type { MediaRecord } from '../types';
 import { MEDIA_TYPES, STATUS_STYLES } from '../types';
 
@@ -5,9 +6,25 @@ interface Props {
   record: MediaRecord;
   onEdit: (r: MediaRecord) => void;
   onDelete: (id: number) => void;
+  onProgressPlus: (r: MediaRecord) => void;
 }
 
-export default function RecordRow({ record, onEdit, onDelete }: Props) {
+export default function RecordRow({ record, onEdit, onDelete, onProgressPlus }: Props) {
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClick = useCallback(() => {
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+      onProgressPlus(record);
+      return;
+    }
+    clickTimer.current = setTimeout(() => {
+      clickTimer.current = null;
+      onEdit(record);
+    }, 250);
+  }, [record, onEdit, onProgressPlus]);
+
   const typeInfo = MEDIA_TYPES[record.media_type ?? ''] ?? { icon: '', label: record.media_type ?? '未知', color: '#888' };
   const statusInfo = STATUS_STYLES[record.status ?? ''] ?? { label: record.status ?? '未知', color: '#888', bg: 'rgba(136,136,136,0.15)' };
 
@@ -17,7 +34,7 @@ export default function RecordRow({ record, onEdit, onDelete }: Props) {
     : null;
 
   return (
-    <div className="record-row" onClick={() => onEdit(record)}>
+    <div className="record-row" onClick={handleClick}>
       <div className="record-name-wrap">
         <span className="record-name">{record.record_name}</span>
       </div>
