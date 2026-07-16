@@ -5,6 +5,8 @@ mod models;
 
 use commands::AppState;
 use std::sync::Mutex;
+use tauri::Manager;
+use tauri::window::Color;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -21,6 +23,9 @@ pub fn run() {
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
+            }
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.set_background_color(Some(Color::from((0, 0, 0, 255))));
             }
             Ok(())
         })
