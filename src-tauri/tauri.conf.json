@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Process",
-        "width": 1100,
-        "height": 750,
+        "width": 1280,
+        "height": 800,
         "minWidth": 800,
         "minHeight": 500,
         "resizable": true,

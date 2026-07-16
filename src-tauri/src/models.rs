@@ -6,7 +6,6 @@ pub struct Record {
     pub record_name: String,
     pub season: Option<i32>,
     pub remark: Option<String>,
-    #[serde(rename = "type")]
     pub media_type: Option<String>,
     pub status: Option<String>,
     pub end_time: Option<String>,

@@ -5,7 +5,11 @@ import FilterBar from '../components/FilterBar';
 import RecordRow from '../components/RecordRow';
 import RecordForm from '../components/RecordForm';
 
-export default function Home() {
+interface Props {
+  connected: boolean;
+}
+
+export default function Home({ connected }: Props) {
   const [records, setRecords] = useState<MediaRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -17,6 +21,7 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false);
 
   const fetchRecords = useCallback(async () => {
+    if (!connected) return;
     setLoading(true);
     setError('');
     try {
@@ -30,11 +35,10 @@ export default function Home() {
       setTotal(result.total);
     } catch (e) {
       setError(String(e));
-      console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [search, mediaType, status]);
+  }, [search, mediaType, status, connected]);
 
   useEffect(() => {
     fetchRecords();
@@ -86,28 +90,29 @@ export default function Home() {
       />
 
       <div className="list-info">
-        <span>共 {total} 条记录</span>
-        <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ 新增</button>
+        <span>{connected ? `共 ${total} 条记录` : ''}</span>
+        <button className="btn btn-primary btn-sm" onClick={handleAdd} disabled={!connected}>+ 新增</button>
       </div>
 
       <div className="record-list">
         <div className="list-header">
-          <span></span>
           <span>名称</span>
-          <span>类型</span>
-          <span>状态</span>
-          <span>进度</span>
-          <span>国家</span>
+          <span style={{ textAlign: 'center' }}>类型</span>
+          <span style={{ textAlign: 'center' }}>状态</span>
+          <span style={{ textAlign: 'center' }}>季</span>
+          <span style={{ textAlign: 'center' }}>进度</span>
+          <span>标签</span>
+          <span style={{ textAlign: 'center' }}>国家</span>
+          <span style={{ textAlign: 'center' }}>完成时间</span>
           <span></span>
         </div>
 
-        {loading ? (
+        {!connected ? null : loading ? (
           <div className="empty-state"><p>加载中...</p></div>
         ) : error ? (
           <div className="empty-state">
             <div className="icon">⚠️</div>
             <p style={{ color: 'var(--danger)', wordBreak: 'break-all', maxWidth: '80%' }}>{error}</p>
-            <button className="btn btn-secondary btn-sm" onClick={() => navigator.clipboard.writeText(error)}>复制错误</button>
           </div>
         ) : records.length === 0 ? (
           <div className="empty-state">

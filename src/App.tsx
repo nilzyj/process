@@ -10,8 +10,9 @@ type Page = 'home' | 'stats';
 
 export default function App() {
   const [connected, setConnected] = useState(false);
-  const [page, setPage] = useState<Page>('home');
   const [checking, setChecking] = useState(true);
+  const [page, setPage] = useState<Page>('home');
+  const [showSetup, setShowSetup] = useState(false);
 
   useEffect(() => {
     const check = async () => {
@@ -20,9 +21,11 @@ export default function App() {
         if (config) {
           await invoke<string>('init_db', { config });
           setConnected(true);
+        } else {
+          setShowSetup(true);
         }
       } catch {
-        // no saved config
+        setShowSetup(true);
       } finally {
         setChecking(false);
       }
@@ -30,22 +33,26 @@ export default function App() {
     check();
   }, []);
 
-  const handleConnected = (_config: DbConfig) => {
+  const handleConnected = () => {
     setConnected(true);
+    setShowSetup(false);
   };
+
+  if (showSetup) {
+    return <SetupPage onConnected={handleConnected} />;
+  }
 
   if (checking) {
     return (
-      <div className="setup-page">
-        <div className="setup-card" style={{ textAlign: 'center' }}>
-          <p>正在检查连接...</p>
+      <div className="app-layout">
+        <header className="app-header">
+          <span className="app-title">PROCESS</span>
+        </header>
+        <div className="app-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: 'var(--text-muted)' }}>正在连接...</p>
         </div>
       </div>
     );
-  }
-
-  if (!connected) {
-    return <SetupPage onConnected={handleConnected} />;
   }
 
   return (
@@ -53,10 +60,10 @@ export default function App() {
       <header className="app-header">
         <span className="app-title">PROCESS</span>
         <button className={`tab-btn ${page === 'home' ? 'active' : ''}`} onClick={() => setPage('home')}>
-          🏠 主页
+          主页
         </button>
         <button className={`tab-btn ${page === 'stats' ? 'active' : ''}`} onClick={() => setPage('stats')}>
-          📊 统计
+          统计
         </button>
         <div style={{ flex: 1 }} />
         <button
@@ -64,14 +71,15 @@ export default function App() {
           onClick={async () => {
             await invoke('save_config', { config_data: { host: '', port: 3306, user: '', password: '', database: '' } });
             setConnected(false);
+            setShowSetup(true);
           }}
         >
-          断开连接
+          断开
         </button>
       </header>
 
       <div className="app-content">
-        {page === 'home' ? <Home /> : <Stats />}
+        {page === 'home' ? <Home connected={connected} /> : <Stats />}
       </div>
     </div>
   );

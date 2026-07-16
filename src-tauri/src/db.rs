@@ -71,7 +71,7 @@ pub async fn list_records(
 
     // Data query
     let data_sql = format!(
-        "SELECT id, record_name, season, remark, `type`, status, end_time, country, tags, current_episode, total_episode, CAST(year AS UNSIGNED) as year, modify_time FROM `process` {} ORDER BY modify_time DESC LIMIT ? OFFSET ?",
+        "SELECT id, record_name, season, remark, `type`, status, end_time, country, tags, current_episode, total_episode, CAST(year AS UNSIGNED) as year, modify_time FROM `process` {} ORDER BY COALESCE(end_time, '1970-01-01') DESC, modify_time DESC LIMIT ? OFFSET ?",
         where_clause
     );
     let mut data_query = sqlx::query_as::<_, RecordRow>(&data_sql);
