@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import type { MediaRecord } from '../types';
 import { MEDIA_TYPES, STATUS_STYLES } from '../types';
 
@@ -58,7 +59,18 @@ export default function RecordRow({ record, onEdit, onDelete, onProgressPlus }: 
       <div className="record-progress">
         {hasProgress ? (
           <div className="progress-cell">
-            <span className="progress-text">{record.current_episode}/{record.total_episode}</span>
+            <span className="progress-text">
+              <motion.span
+                key={record.current_episode}
+                initial={{ scale: 1, color: 'var(--text-primary)' }}
+                animate={{ scale: [1, 1.4, 1], color: ['var(--text-primary)', '#22d3ee', 'var(--text-primary)'] }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                style={{ display: 'inline-block' }}
+              >
+                {record.current_episode}
+              </motion.span>
+              /{record.total_episode}
+            </span>
             <div className="progress-bar">
               <div className="progress-fill" style={{ width: `${progressPct}%` }} />
             </div>
