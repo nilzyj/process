@@ -1,0 +1,138 @@
+import { useState, useEffect, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import type { MediaRecord, RecordFilter, NewRecord, UpdateRecord, PaginatedResult } from '../types';
+import FilterBar from '../components/FilterBar';
+import RecordRow from '../components/RecordRow';
+import RecordForm from '../components/RecordForm';
+
+export default function Home() {
+  const [records, setRecords] = useState<MediaRecord[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [mediaType, setMediaType] = useState('全部');
+  const [status, setStatus] = useState('全部');
+  const [editing, setEditing] = useState<MediaRecord | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const fetchRecords = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const filter: RecordFilter = { page: 1, page_size: 200 };
+      if (search) filter.search = search;
+      if (mediaType !== '全部') filter.media_type = mediaType;
+      if (status !== '全部') filter.status = status;
+
+      const result = await invoke<PaginatedResult>('list_records', { filter });
+      setRecords(result.records);
+      setTotal(result.total);
+    } catch (e) {
+      setError(String(e));
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, mediaType, status]);
+
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
+
+  const handleSave = async (data: NewRecord | UpdateRecord) => {
+    try {
+      if ('id' in data) {
+        await invoke('update_record', { record: data });
+      } else {
+        await invoke('add_record', { record: data });
+      }
+      setShowForm(false);
+      setEditing(null);
+      fetchRecords();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await invoke('delete_record', { id });
+      fetchRecords();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleEdit = (record: MediaRecord) => {
+    setEditing(record);
+    setShowForm(true);
+  };
+
+  const handleAdd = () => {
+    setEditing(null);
+    setShowForm(true);
+  };
+
+  return (
+    <>
+      <FilterBar
+        search={search}
+        mediaType={mediaType}
+        status={status}
+        onSearchChange={setSearch}
+        onTypeChange={setMediaType}
+        onStatusChange={setStatus}
+      />
+
+      <div className="list-info">
+        <span>共 {total} 条记录</span>
+        <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ 新增</button>
+      </div>
+
+      <div className="record-list">
+        <div className="list-header">
+          <span></span>
+          <span>名称</span>
+          <span>类型</span>
+          <span>状态</span>
+          <span>进度</span>
+          <span>国家</span>
+          <span></span>
+        </div>
+
+        {loading ? (
+          <div className="empty-state"><p>加载中...</p></div>
+        ) : error ? (
+          <div className="empty-state">
+            <div className="icon">⚠️</div>
+            <p style={{ color: 'var(--danger)', wordBreak: 'break-all', maxWidth: '80%' }}>{error}</p>
+            <button className="btn btn-secondary btn-sm" onClick={() => navigator.clipboard.writeText(error)}>复制错误</button>
+          </div>
+        ) : records.length === 0 ? (
+          <div className="empty-state">
+            <div className="icon">📭</div>
+            <p>暂无记录</p>
+          </div>
+        ) : (
+          records.map((r) => (
+            <RecordRow
+              key={r.id}
+              record={r}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+
+      {showForm && (
+        <RecordForm
+          record={editing}
+          onSave={handleSave}
+          onClose={() => { setShowForm(false); setEditing(null); }}
+        />
+      )}
+    </>
+  );
+}
