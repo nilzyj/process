@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use sqlx::MySqlPool;
 use tauri::State;
 
@@ -7,7 +7,7 @@ use crate::db;
 use crate::models::*;
 
 pub struct AppState {
-    pub pool: Mutex<Option<MySqlPool>>,
+    pub pool: Arc<Mutex<Option<MySqlPool>>>,
 }
 
 #[tauri::command]
@@ -31,6 +31,11 @@ pub async fn save_config(config_data: DbConfig) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn init_db(state: State<'_, AppState>, config: DbConfig) -> Result<String, String> {
+    // Background task may have already connected
+    if state.pool.lock().map_err(|e| e.to_string())?.is_some() {
+        config::save_config(&config).ok();
+        return Ok("数据库连接成功".into());
+    }
     match db::connect(&config).await {
         Ok(pool) => {
             *state.pool.lock().map_err(|e| e.to_string())? = Some(pool);

@@ -3,14 +3,15 @@ mod config;
 mod db;
 mod models;
 
+use std::sync::{Arc, Mutex};
 use commands::AppState;
-use std::sync::Mutex;
 use tauri::webview::PageLoadEvent;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let state = AppState {
-        pool: Mutex::new(None),
+        pool: Arc::new(Mutex::new(None)),
     };
 
     tauri::Builder::default()
@@ -23,11 +24,20 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            // Pre-connect to DB in background while page loads
+            if let Some(config) = config::load_config() {
+                let pool_arc = app.state::<AppState>().pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Ok(pool) = db::connect(&config).await {
+                        *pool_arc.lock().unwrap() = Some(pool);
+                    }
+                });
+            }
             Ok(())
         })
         .on_page_load(|webview, payload| {
             if webview.label() == "main"
-                && matches!(payload.event(), PageLoadEvent::Finished)
+                && matches!(payload.event(), PageLoadEvent::Started)
             {
                 let _ = webview.window().show();
             }
