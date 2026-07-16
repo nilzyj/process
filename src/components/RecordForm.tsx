@@ -124,6 +124,11 @@ export default function RecordForm({ record, onSave, onClose }: Props) {
           </div>
 
           <div className="form-group">
+            <label>完成时间</label>
+            <input type="datetime-local" value={form.end_time ? form.end_time.slice(0, 16) : ''} onChange={(e) => update('end_time', e.target.value ? e.target.value + ':00' : null)} />
+          </div>
+
+          <div className="form-group">
             <label>备注</label>
             <textarea value={form.remark ?? ''} onChange={(e) => update('remark', e.target.value)} />
           </div>
