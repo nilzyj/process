@@ -16,7 +16,7 @@ export default function Home({ connected }: Props) {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [mediaType, setMediaType] = useState('全部');
-  const [status, setStatus] = useState('全部');
+  const [status, setStatus] = useState('进行中');
   const [editing, setEditing] = useState<MediaRecord | null>(null);
   const [showForm, setShowForm] = useState(false);
 
