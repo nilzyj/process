@@ -20,9 +20,9 @@ export default function Home({ connected }: Props) {
   const [editing, setEditing] = useState<MediaRecord | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const fetchRecords = useCallback(async () => {
+  const fetchRecords = useCallback(async (silent?: boolean) => {
     if (!connected) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError('');
     try {
       const filter: RecordFilter = { page: 1, page_size: 200 };
@@ -53,7 +53,7 @@ export default function Home({ connected }: Props) {
       }
       setShowForm(false);
       setEditing(null);
-      fetchRecords();
+      fetchRecords(true);
     } catch (e) {
       console.error(e);
     }
@@ -82,7 +82,7 @@ export default function Home({ connected }: Props) {
           year: record.year,
         },
       });
-      fetchRecords();
+      fetchRecords(true);
     } catch (e) {
       console.error(e);
     }
@@ -91,7 +91,7 @@ export default function Home({ connected }: Props) {
   const handleDelete = async (id: number) => {
     try {
       await invoke('delete_record', { id });
-      fetchRecords();
+      fetchRecords(true);
     } catch (e) {
       console.error(e);
     }
