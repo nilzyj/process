@@ -42,19 +42,6 @@ export default function App() {
     return <SetupPage onConnected={handleConnected} />;
   }
 
-  if (checking) {
-    return (
-      <div className="app-layout">
-        <header className="app-header">
-          <span className="app-title">PROCESS</span>
-        </header>
-        <div className="app-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: 'var(--text-muted)' }}>正在连接...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="app-layout">
       <header className="app-header">
@@ -79,7 +66,7 @@ export default function App() {
       </header>
 
       <div className="app-content">
-        {page === 'home' ? <Home connected={connected} /> : <Stats />}
+        {page === 'home' ? <Home connected={connected} checking={checking} /> : <Stats />}
       </div>
     </div>
   );

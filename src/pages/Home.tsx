@@ -7,9 +7,10 @@ import RecordForm from '../components/RecordForm';
 
 interface Props {
   connected: boolean;
+  checking: boolean;
 }
 
-export default function Home({ connected }: Props) {
+export default function Home({ connected, checking }: Props) {
   const [records, setRecords] = useState<MediaRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -136,7 +137,9 @@ export default function Home({ connected }: Props) {
           <span></span>
         </div>
 
-        {!connected ? null : loading ? (
+        {checking ? (
+          <div className="empty-state"><p style={{ color: 'var(--text-muted)' }}>正在连接...</p></div>
+        ) : !connected ? null : loading ? (
           <div className="empty-state"><p>加载中...</p></div>
         ) : error ? (
           <div className="empty-state">
