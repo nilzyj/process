@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { MediaRecord, RecordFilter, NewRecord, UpdateRecord, PaginatedResult } from '../types';
 import FilterBar from '../components/FilterBar';
 import RecordRow from '../components/RecordRow';
-import RecordForm from '../components/RecordForm';
+
+const RecordForm = lazy(() => import('../components/RecordForm'));
 
 interface Props {
   connected: boolean;
@@ -22,7 +23,28 @@ export default function Home({ connected }: Props) {
 
   const fetchRecords = useCallback(async (silent?: boolean) => {
     if (!connected) return;
-    if (!silent) setLoading(true);
+    if (!silent) {
+      // Try pre-fetched cache first on initial load
+      try {
+        const cached = await invoke<PaginatedResult | null>('get_cached_records');
+        if (cached && cached.records.length > 0) {
+          setRecords(cached.records);
+          setTotal(cached.total);
+          setLoading(false);
+          // Silently refresh from server in background
+          const filter: RecordFilter = { page: 1, page_size: 200 };
+          if (search) filter.search = search;
+          if (mediaType !== '全部') filter.media_type = mediaType;
+          if (status !== '全部') filter.status = status;
+          invoke<PaginatedResult>('list_records', { filter }).then((r) => {
+            setRecords(r.records);
+            setTotal(r.total);
+          }).catch(() => {});
+          return;
+        }
+      } catch {}
+      setLoading(true);
+    }
     setError('');
     try {
       const filter: RecordFilter = { page: 1, page_size: 200 };
@@ -170,11 +192,13 @@ export default function Home({ connected }: Props) {
       </div>
 
       {showForm && (
-        <RecordForm
-          record={editing}
-          onSave={handleSave}
-          onClose={() => { setShowForm(false); setEditing(null); }}
-        />
+        <Suspense fallback={null}>
+          <RecordForm
+            record={editing}
+            onSave={handleSave}
+            onClose={() => { setShowForm(false); setEditing(null); }}
+          />
+        </Suspense>
       )}
     </>
   );

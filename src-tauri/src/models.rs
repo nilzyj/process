@@ -76,7 +76,7 @@ pub struct RecordFilter {
     pub page_size: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaginatedResult {
     pub records: Vec<Record>,
     pub total: i64,

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { DbConfig } from './types';
 import SetupPage from './components/SetupPage';
 import Home from './pages/Home';
-import Stats from './pages/Stats';
+
+const Stats = lazy(() => import('./pages/Stats'));
+
 import './App.css';
 
 type Page = 'home' | 'stats';
@@ -63,7 +65,7 @@ export default function App() {
       </header>
 
       <div className="app-content">
-        {page === 'home' ? <Home connected={connected} /> : <Stats />}
+        {page === 'home' ? <Home connected={connected} /> : <Suspense fallback={null}><Stats /></Suspense>}
       </div>
     </div>
   );

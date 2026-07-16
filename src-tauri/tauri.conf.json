@@ -12,6 +12,17 @@
   "app": {
     "windows": [
       {
+        "label": "splashscreen",
+        "url": "/splashscreen.html",
+        "width": 320,
+        "height": 240,
+        "center": true,
+        "decorations": false,
+        "visible": true,
+        "backgroundColor": "#000000"
+      },
+      {
+        "label": "main",
         "title": "Process",
         "width": 1280,
         "height": 800,

@@ -8,6 +8,7 @@ use crate::models::*;
 
 pub struct AppState {
     pub pool: Arc<Mutex<Option<MySqlPool>>>,
+    pub cached_records: Arc<Mutex<Option<PaginatedResult>>>,
 }
 
 #[tauri::command]
@@ -44,6 +45,15 @@ pub async fn init_db(state: State<'_, AppState>, config: DbConfig) -> Result<Str
         }
         Err(e) => Err(format!("连接失败: {}", e)),
     }
+}
+
+#[tauri::command]
+pub async fn get_cached_records(state: State<'_, AppState>) -> Result<Option<PaginatedResult>, String> {
+    Ok(state
+        .cached_records
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone())
 }
 
 fn get_pool(state: &AppState) -> Result<MySqlPool, String> {

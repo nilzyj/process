@@ -12,6 +12,7 @@ use tauri::Manager;
 pub fn run() {
     let state = AppState {
         pool: Arc::new(Mutex::new(None)),
+        cached_records: Arc::new(Mutex::new(None)),
     };
 
     tauri::Builder::default()
@@ -27,9 +28,21 @@ pub fn run() {
             // Pre-connect to DB in background while page loads
             if let Some(config) = config::load_config() {
                 let pool_arc = app.state::<AppState>().pool.clone();
+                let cached_arc = app.state::<AppState>().cached_records.clone();
                 tauri::async_runtime::spawn(async move {
                     if let Ok(pool) = db::connect(&config).await {
-                        *pool_arc.lock().unwrap() = Some(pool);
+                        *pool_arc.lock().unwrap() = Some(pool.clone());
+                        // Pre-fetch default query (status="进行中") into cache
+                        let filter = models::RecordFilter {
+                            search: None,
+                            media_type: None,
+                            status: Some("进行中".to_string()),
+                            page: Some(1),
+                            page_size: Some(200),
+                        };
+                        if let Ok(result) = db::list_records(&pool, filter).await {
+                            *cached_arc.lock().unwrap() = Some(result);
+                        }
                     }
                 });
             }
@@ -39,6 +52,9 @@ pub fn run() {
             if webview.label() == "main"
                 && matches!(payload.event(), PageLoadEvent::Finished)
             {
+                if let Some(splash) = webview.app_handle().get_webview_window("splashscreen") {
+                    let _ = splash.close();
+                }
                 let _ = webview.window().show();
             }
         })
@@ -53,6 +69,7 @@ pub fn run() {
             commands::update_record,
             commands::delete_record,
             commands::get_stats,
+            commands::get_cached_records,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
