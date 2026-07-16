@@ -37,7 +37,7 @@ pub fn run() {
         })
         .on_page_load(|webview, payload| {
             if webview.label() == "main"
-                && matches!(payload.event(), PageLoadEvent::Started)
+                && matches!(payload.event(), PageLoadEvent::Finished)
             {
                 let _ = webview.window().show();
             }
