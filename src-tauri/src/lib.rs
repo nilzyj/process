@@ -5,8 +5,9 @@ mod models;
 
 use commands::AppState;
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::webview::PageLoadEvent;
 use tauri::window::Color;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -28,6 +29,13 @@ pub fn run() {
                 let _ = w.set_background_color(Some(Color::from((0, 0, 0, 255))));
             }
             Ok(())
+        })
+        .on_page_load(|webview, payload| {
+            if webview.label() == "main"
+                && matches!(payload.event(), PageLoadEvent::Finished)
+            {
+                let _ = webview.window().show();
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::test_connection,
