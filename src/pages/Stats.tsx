@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { Stats as StatsType } from '../types';
-import { MEDIA_TYPES, STATUS_STYLES } from '../types';
+import { MEDIA_TYPES } from '../types';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 
 export default function Stats() {
@@ -32,10 +32,8 @@ export default function Stats() {
     <div className="stats-page">
       <SummaryCards stats={stats} />
       <CompletionRates stats={stats} />
-      <div className="stats-row">
-        <TypeStatusCross stats={stats} />
-        <AnnualTrends stats={stats} />
-      </div>
+      <TypeStatusCross stats={stats} />
+      <AnnualTrends stats={stats} />
       <MonthlyTimeline data={stats.daily_activity} />
       <CountryDist stats={stats} />
       <TagDist stats={stats} />
@@ -99,45 +97,49 @@ function CompletionRates({ stats }: { stats: StatsType }) {
 function TypeStatusCross({ stats }: { stats: StatsType }) {
   const typeOrder = useMemo(() => {
     const seen = new Set<string>();
-    const order: string[] = [];
     for (const ts of stats.type_status) {
-      if (!seen.has(ts.media_type)) { seen.add(ts.media_type); order.push(ts.media_type); }
+      if (!seen.has(ts.media_type)) { seen.add(ts.media_type); }
     }
-    return order;
+    return Array.from(seen);
   }, [stats.type_status]);
 
-  const statusOrder = ['待办', '进行中', '已完成'];
+  const statuses = ['待办', '进行中', '已完成'];
+  const statusColors: Record<string, string> = { '待办': '#888', '进行中': '#22d3ee', '已完成': '#22c55e' };
 
   return (
-    <div className="stats-section stats-section-half">
+    <div className="stats-section">
       <h3>类型 × 状态</h3>
-      <div className="ts-cross-list">
+      <div className="xstatus-legend">
+        {statuses.map((s) => (
+          <span key={s} className="xs-legend-item">
+            <span className="xs-dot" style={{ background: statusColors[s] }} />
+            {s}
+          </span>
+        ))}
+      </div>
+      <div className="xstatus-table">
+        <div className="xst-head">
+          <span className="xst-c1">类型</span>
+          {statuses.map((s) => <span key={s} className="xst-cn">{s}</span>)}
+          <span className="xst-cn">合计</span>
+        </div>
         {typeOrder.map((type) => {
           const rows = stats.type_status.filter((t) => t.media_type === type);
           const total = rows.reduce((s, r) => s + r.count, 0);
           if (total === 0) return null;
           const info = MEDIA_TYPES[type];
           return (
-            <div key={type} className="ts-cross-item">
-              <span className="label">{info?.icon ?? '📄'} {type}</span>
-              <div className="ts-cross-bar">
-                {statusOrder.map((st) => {
-                  const row = rows.find((r) => r.status === st);
-                  const cnt = row?.count ?? 0;
-                  const pct = (cnt / total) * 100;
-                  if (cnt === 0) return null;
-                  const style = STATUS_STYLES[st];
-                  return (
-                    <div
-                      key={st}
-                      className="ts-cross-seg"
-                      style={{ width: `${pct}%`, background: style?.color ?? '#555' }}
-                      title={`${st}: ${cnt}`}
-                    />
-                  );
-                })}
-              </div>
-              <span className="ts-cross-total">{total}</span>
+            <div key={type} className="xst-row">
+              <span className="xst-c1">{info?.icon ?? '📄'} {type}</span>
+              {statuses.map((st) => {
+                const cnt = rows.find((r) => r.status === st)?.count ?? 0;
+                return (
+                  <span key={st} className="xst-cn" style={{ color: cnt > 0 ? statusColors[st] : 'var(--text-muted)', fontWeight: cnt > 0 ? 700 : 400 }}>
+                    {cnt || '-'}
+                  </span>
+                );
+              })}
+              <span className="xst-cn" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{total}</span>
             </div>
           );
         })}
