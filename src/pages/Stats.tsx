@@ -37,10 +37,8 @@ export default function Stats() {
         <AnnualTrends stats={stats} />
       </div>
       <MonthlyTimeline data={stats.daily_activity} />
-      <div className="stats-row">
-        <CountryDist stats={stats} />
-        <TagDist stats={stats} />
-      </div>
+      <CountryDist stats={stats} />
+      <TagDist stats={stats} />
       <ProgressBuckets stats={stats} />
       <RecentActivity stats={stats} />
       <div className="stats-section">
@@ -233,22 +231,21 @@ function CountryDist({ stats }: { stats: StatsType }) {
 }
 
 function TagDist({ stats }: { stats: StatsType }) {
-  const maxCount = Math.max(...stats.by_tags.map((t) => t.count), 1);
   if (!stats.by_tags.length) return null;
+  const maxCount = Math.max(...stats.by_tags.map((t) => t.count), 1);
+  const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#6C5B7B','#F08A5D','#B83B5E','#08D9D6','#FF2E63','#00ADB5'];
   return (
-    <div className="stats-section stats-section-half">
+    <div className="stats-section">
       <h3>标签分布</h3>
-      <div className="stats-bar-list">
-        {stats.by_tags.map((t) => {
-          const pct = Math.round((t.count / maxCount) * 100);
+      <div className="tag-bubbles">
+        {stats.by_tags.map((t, i) => {
+          const size = 52 + Math.round((t.count / maxCount) * 64);
+          const color = palette[i % palette.length];
+          const fs = size < 64 ? 10 : size < 86 ? 11 : 12;
           return (
-            <div key={t.tag} className="stats-bar-item">
-              <span className="label">{t.tag}</span>
-              <div className="stats-bar-track">
-                <div className="stats-bar-fill" style={{ width: `${pct}%`, background: '#ec4899' }}>
-                  {t.count}
-                </div>
-              </div>
+            <div key={t.tag} className="tag-bubble" style={{ width: size, height: size, borderColor: `${color}88`, background: `${color}18` }}>
+              <span className="tb-name" style={{ fontSize: fs, color }}>{t.tag}</span>
+              <span className="tb-count" style={{ color: `${color}cc` }}>{t.count}</span>
             </div>
           );
         })}

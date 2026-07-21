@@ -888,3 +888,42 @@ input, textarea, select {
   height: 14px;
   border-radius: 3px;
 }
+
+/* Tag Bubbles */
+.tag-bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 0;
+  justify-content: center;
+}
+
+.tag-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.tag-bubble:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 24px rgba(255,255,255,0.06);
+}
+
+.tb-name {
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  padding: 0 2px;
+}
+
+.tb-count {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
+  margin-top: 1px;
+}
