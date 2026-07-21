@@ -710,7 +710,8 @@ input, textarea, select {
   align-items: flex-end;
   gap: 3px;
   height: 150px;
-  padding: 4px 0;
+  padding: 4px 0 12px;
+  overflow-x: auto;
 }
 
 .monthly-item {
