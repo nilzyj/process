@@ -32,7 +32,7 @@ export default function Stats() {
       <SummaryCards stats={stats} />
       <div className="stats-row">
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="stats-section">
+          <div className="stats-section" style={{ paddingRight: 0 }}>
             <h3>活动热力图</h3>
             <ActivityHeatmap data={stats.daily_activity} />
           </div>
