@@ -152,9 +152,7 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
     for (const y of stats.by_year) {
       yearSet.add(String(y.year));
     }
-    if (yearSet.size === 0) {
-      yearSet.add(String(new Date().getFullYear()));
-    }
+    if (yearSet.size === 0) return [];
     const monthMap = new Map<string, number>();
     for (const m of stats.monthly_end) {
       monthMap.set(m.month, m.count);
@@ -170,6 +168,7 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
       return { year, total, months };
     });
   }, [stats]);
+  if (!years.length) return null;
   const maxYearTotal = Math.max(...years.map((y) => y.total), 1);
   const colors = ['#22d3ee','#2dd4bf','#34d399','#4ade80','#a3e635','#facc15','#fb923c','#f87171','#c084fc','#818cf8'];
 
