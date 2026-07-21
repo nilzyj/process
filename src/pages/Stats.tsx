@@ -193,7 +193,6 @@ function CountryDist({ stats }: { stats: StatsType }) {
           return (
             <div key={c.country} className="country-card" style={{ borderColor: `${color}33`, background: `${color}0a` }}>
               <span className="cc-flag">{flags[c.country] || '🌍'}</span>
-              <span className="cc-name">{c.country}</span>
               <span className="cc-count" style={{ color }}>{c.count}</span>
             </div>
           );
