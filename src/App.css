@@ -889,41 +889,41 @@ input, textarea, select {
   border-radius: 3px;
 }
 
-/* Tag Bubbles */
-.tag-bubbles {
+/* Pill Grid */
+.pill-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  padding: 8px 0;
-  justify-content: center;
+  gap: 10px;
+  padding: 4px 0;
 }
 
-.tag-bubble {
-  display: flex;
-  flex-direction: column;
+.pill {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  border: 2px solid;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 0;
+  border: 1px solid;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.2s;
   cursor: default;
 }
 
-.tag-bubble:hover {
-  transform: scale(1.12);
-  box-shadow: 0 0 24px rgba(255,255,255,0.06);
+.pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-.tb-name {
+.pill-name {
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.2;
-  text-align: center;
-  padding: 0 2px;
+  padding: 5px 10px 5px 12px;
+  white-space: nowrap;
 }
 
-.tb-count {
-  font-size: 10px;
+.pill-count {
+  font-size: 11px;
   font-weight: 700;
-  opacity: 0.85;
-  margin-top: 1px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin: 2px;
 }

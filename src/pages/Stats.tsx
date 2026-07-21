@@ -232,20 +232,17 @@ function CountryDist({ stats }: { stats: StatsType }) {
 
 function TagDist({ stats }: { stats: StatsType }) {
   if (!stats.by_tags.length) return null;
-  const maxCount = Math.max(...stats.by_tags.map((t) => t.count), 1);
-  const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#6C5B7B','#F08A5D','#B83B5E','#08D9D6','#FF2E63','#00ADB5'];
+  const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5','#FF2E63','#6C5B7B'];
   return (
     <div className="stats-section">
       <h3>标签分布</h3>
-      <div className="tag-bubbles">
+      <div className="pill-grid">
         {stats.by_tags.map((t, i) => {
-          const size = 52 + Math.round((t.count / maxCount) * 64);
           const color = palette[i % palette.length];
-          const fs = size < 64 ? 10 : size < 86 ? 11 : 12;
           return (
-            <div key={t.tag} className="tag-bubble" style={{ width: size, height: size, borderColor: `${color}88`, background: `${color}18` }}>
-              <span className="tb-name" style={{ fontSize: fs, color }}>{t.tag}</span>
-              <span className="tb-count" style={{ color: `${color}cc` }}>{t.count}</span>
+            <div key={t.tag} className="pill" style={{ borderColor: `${color}44`, background: `${color}14` }}>
+              <span className="pill-name" style={{ color }}>{t.tag}</span>
+              <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
             </div>
           );
         })}
