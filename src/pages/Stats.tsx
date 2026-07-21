@@ -30,11 +30,15 @@ export default function Stats() {
   return (
     <div className="stats-page">
       <SummaryCards stats={stats} />
-      <div className="stats-section">
-        <h3>活动热力图</h3>
-        <ActivityHeatmap data={stats.daily_activity} />
+      <div className="stats-row">
+        <div className="stats-section" style={{ flex: 2 }}>
+          <h3>活动热力图</h3>
+          <ActivityHeatmap data={stats.daily_activity} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <YearDist stats={stats} />
+        </div>
       </div>
-      <YearDist stats={stats} />
       <MonthlyTimeline stats={stats} />
       <CountryDist stats={stats} />
       <TagDist stats={stats} />
