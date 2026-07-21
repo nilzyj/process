@@ -33,11 +33,11 @@ export default function RecordRow({ record, onEdit, onDelete, onProgressPlus }: 
   const progressPct = hasProgress && record.total_episode! > 0
     ? Math.min(100, Math.round((record.current_episode! / record.total_episode!) * 100))
     : null;
-  const barColor = progressPct == null ? '#81D4FA'
-    : progressPct >= 100 ? '#A5D6A7'
-    : progressPct >= 66 ? '#81D4FA'
-    : progressPct >= 33 ? '#FFD54F'
-    : '#FFAB91';
+  const barColor = progressPct == null ? '#22d3ee'
+    : progressPct >= 100 ? '#22c55e'
+    : progressPct >= 66 ? '#06b6d4'
+    : progressPct >= 33 ? '#f97316'
+    : '#f43f5e';
 
   return (
     <div className="record-row" onClick={handleClick}>
@@ -68,7 +68,7 @@ export default function RecordRow({ record, onEdit, onDelete, onProgressPlus }: 
               <motion.span
                 key={record.current_episode}
                 initial={{ scale: 1, color: 'var(--text-primary)' }}
-                animate={{ scale: [1, 1.4, 1], color: ['var(--text-primary)', '#81D4FA', 'var(--text-primary)'] }}
+                animate={{ scale: [1, 1.4, 1], color: ['var(--text-primary)', '#22d3ee', 'var(--text-primary)'] }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
                 style={{ display: 'inline-block' }}
               >
