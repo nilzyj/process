@@ -209,7 +209,7 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
             .await?;
 
     let daily: Vec<(String, i64)> =
-        sqlx::query_as("SELECT DATE_FORMAT(modify_time, '%Y-%m-%d') as day, COUNT(*) as c FROM `process` WHERE modify_time >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) GROUP BY DATE_FORMAT(modify_time, '%Y-%m-%d') ORDER BY day")
+        sqlx::query_as("SELECT DATE_FORMAT(modify_time, '%Y-%m-%d') as day, COUNT(*) as c FROM `process` WHERE modify_time IS NOT NULL GROUP BY DATE_FORMAT(modify_time, '%Y-%m-%d') ORDER BY day")
             .fetch_all(pool)
             .await?;
 

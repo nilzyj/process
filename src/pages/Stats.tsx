@@ -229,7 +229,7 @@ function MonthlyTimeline({ data }: { data: { date: string; count: number }[] }) 
     return Array.from(map.entries())
       .map(([month, count]) => ({ month, count }))
       .sort((a, b) => a.month.localeCompare(b.month))
-      .slice(-24);
+      .slice(-60);
   }, [data]);
 
   const maxCount = Math.max(...monthly.map((m) => m.count), 1);
