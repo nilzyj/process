@@ -69,18 +69,42 @@ function SummaryCards({ stats }: { stats: StatsType }) {
 
 
 function YearDist({ stats }: { stats: StatsType }) {
-  const palette = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1','#14b8a6','#f43f5e'];
-  if (!stats.by_year.length) return null;
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const years = stats.by_year.sort((a, b) => a.year - b.year);
+  if (!years.length) return null;
+  const maxCount = Math.max(...years.map((y) => y.count), 1);
+  const colors = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1','#14b8a6','#f43f5e'];
   return (
     <div className="stats-section">
       <h3>发行年份</h3>
-      <div className="country-grid">
-        {stats.by_year.map((y, i) => {
-          const color = palette[i % palette.length];
+      <div className="stats-bar-list">
+        {years.map((yr, i) => {
+          const isOpen = expanded === String(yr.year);
+          const pct = Math.round((yr.count / maxCount) * 100);
+          const color = colors[i % colors.length];
           return (
-            <div key={y.year} className="country-card" style={{ borderColor: `${color}33`, background: `${color}0a` }}>
-              <span className="cc-name" style={{ color }}>{y.year}年</span>
-              <span className="cc-count" style={{ color: `${color}bb` }}>{y.count}</span>
+            <div key={yr.year}>
+              <div className="stats-bar-item clickable" onClick={() => setExpanded(isOpen ? null : String(yr.year))}>
+                <span className="label">
+                  <span className="yd-arrow">{isOpen ? '▼' : '▶'}</span>
+                  {yr.year}年
+                </span>
+                <div className="stats-bar-track">
+                  <div className="stats-bar-fill" style={{ width: `${pct}%`, background: color }}>
+                    {yr.count}
+                  </div>
+                </div>
+              </div>
+              {isOpen && (
+                <div className="mt-month-grid">
+                  {Array.from({ length: 12 }, (_, idx) => (
+                    <div key={`${yr.year}-${idx}`} className="mt-cell" style={{ background: `${color}15` }}>
+                      <span className="mt-cell-month">{idx + 1}月</span>
+                      <span className="mt-cell-count" style={{ color: `${color}bb` }}>-</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
