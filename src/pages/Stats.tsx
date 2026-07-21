@@ -31,6 +31,10 @@ export default function Stats() {
   return (
     <div className="stats-page">
       <SummaryCards stats={stats} />
+      <div className="stats-section">
+        <h3>活动热力图</h3>
+        <ActivityHeatmap data={stats.daily_activity} />
+      </div>
       <CompletionRates stats={stats} />
       <TypeStatusCross stats={stats} />
       <YearDist stats={stats} />
@@ -39,10 +43,6 @@ export default function Stats() {
       <TagDist stats={stats} />
       <ProgressBuckets stats={stats} />
       <RecentActivity stats={stats} />
-      <div className="stats-section">
-        <h3>活动热力图</h3>
-        <ActivityHeatmap data={stats.daily_activity} />
-      </div>
     </div>
   );
 }
