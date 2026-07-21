@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { Stats as StatsType } from '../types';
-import { MEDIA_TYPES } from '../types';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 
 export default function Stats() {
@@ -35,14 +34,11 @@ export default function Stats() {
         <h3>活动热力图</h3>
         <ActivityHeatmap data={stats.daily_activity} />
       </div>
-      <CompletionRates stats={stats} />
-      <TypeStatusCross stats={stats} />
       <YearDist stats={stats} />
       <MonthlyTimeline stats={stats} />
       <CountryDist stats={stats} />
       <TagDist stats={stats} />
       <ProgressBuckets stats={stats} />
-      <RecentActivity stats={stats} />
     </div>
   );
 }
@@ -65,88 +61,7 @@ function SummaryCards({ stats }: { stats: StatsType }) {
   );
 }
 
-function CompletionRates({ stats }: { stats: StatsType }) {
-  const maxTotal = Math.max(...stats.completion_rates.map((r) => r.total), 1);
-  return (
-    <div className="stats-section">
-      <h3>完成率按类型</h3>
-      <div className="stats-bar-list">
-        {stats.completion_rates.map((r) => {
-          const info = MEDIA_TYPES[r.media_type];
-          const pct = r.total > 0 ? Math.round((r.completed / r.total) * 100) : 0;
-          const barW = Math.round((r.total / maxTotal) * 100);
-          return (
-            <div key={r.media_type} className="stats-bar-item">
-              <span className="label">{info?.icon ?? '📄'} {r.media_type}</span>
-              <div className="stats-bar-track">
-                <div
-                  className="stats-bar-fill completion-fill"
-                  style={{ width: `${barW}%`, background: pct >= 100 ? '#22c55e' : pct > 0 ? '#22d3ee' : '#555' }}
-                >
-                  <span className="cr-text">{r.completed}/{r.total} ({pct}%)</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
-function TypeStatusCross({ stats }: { stats: StatsType }) {
-  const typeOrder = useMemo(() => {
-    const seen = new Set<string>();
-    for (const ts of stats.type_status) {
-      if (!seen.has(ts.media_type)) { seen.add(ts.media_type); }
-    }
-    return Array.from(seen);
-  }, [stats.type_status]);
-
-  const statuses = ['待办', '进行中', '已完成'];
-  const statusColors: Record<string, string> = { '待办': '#888', '进行中': '#22d3ee', '已完成': '#22c55e' };
-
-  return (
-    <div className="stats-section">
-      <h3>类型 × 状态</h3>
-      <div className="xstatus-legend">
-        {statuses.map((s) => (
-          <span key={s} className="xs-legend-item">
-            <span className="xs-dot" style={{ background: statusColors[s] }} />
-            {s}
-          </span>
-        ))}
-      </div>
-      <div className="xstatus-table">
-        <div className="xst-head">
-          <span className="xst-c1">类型</span>
-          {statuses.map((s) => <span key={s} className="xst-cn">{s}</span>)}
-          <span className="xst-cn">合计</span>
-        </div>
-        {typeOrder.map((type) => {
-          const rows = stats.type_status.filter((t) => t.media_type === type);
-          const total = rows.reduce((s, r) => s + r.count, 0);
-          if (total === 0) return null;
-          const info = MEDIA_TYPES[type];
-          return (
-            <div key={type} className="xst-row">
-              <span className="xst-c1">{info?.icon ?? '📄'} {type}</span>
-              {statuses.map((st) => {
-                const cnt = rows.find((r) => r.status === st)?.count ?? 0;
-                return (
-                  <span key={st} className="xst-cn" style={{ color: cnt > 0 ? statusColors[st] : 'var(--text-muted)', fontWeight: cnt > 0 ? 700 : 400 }}>
-                    {cnt || '-'}
-                  </span>
-                );
-              })}
-              <span className="xst-cn" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{total}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 function YearDist({ stats }: { stats: StatsType }) {
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -251,21 +166,25 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
 }
 
 function CountryDist({ stats }: { stats: StatsType }) {
-  const maxCount = Math.max(...stats.by_country.map((c) => c.count), 1);
+  const flags: Record<string, string> = {
+    '日本':'🇯🇵','美国':'🇺🇸','中国':'🇨🇳','韩国':'🇰🇷','英国':'🇬🇧',
+    '法国':'🇫🇷','德国':'🇩🇪','意大利':'🇮🇹','西班牙':'🇪🇸','俄罗斯':'🇷🇺',
+    '加拿大':'🇨🇦','澳大利亚':'🇦🇺','印度':'🇮🇳','泰国':'🇹🇭','台湾':'🇹🇼',
+    '香港':'🇭🇰','巴西':'🇧🇷','墨西哥':'🇲🇽','荷兰':'🇳🇱','瑞典':'🇸🇪',
+  };
+  const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5'];
+  if (!stats.by_country.length) return null;
   return (
-    <div className="stats-section stats-section-half">
+    <div className="stats-section">
       <h3>国家分布</h3>
-      <div className="stats-bar-list">
-        {stats.by_country.map((c) => {
-          const pct = Math.round((c.count / maxCount) * 100);
+      <div className="country-grid">
+        {stats.by_country.map((c, i) => {
+          const color = palette[i % palette.length];
           return (
-            <div key={c.country} className="stats-bar-item">
-              <span className="label">{c.country}</span>
-              <div className="stats-bar-track">
-                <div className="stats-bar-fill" style={{ width: `${pct}%`, background: '#a855f7' }}>
-                  {c.count}
-                </div>
-              </div>
+            <div key={c.country} className="country-card" style={{ borderColor: `${color}33`, background: `${color}0a` }}>
+              <span className="cc-flag">{flags[c.country] || '🌍'}</span>
+              <span className="cc-name">{c.country}</span>
+              <span className="cc-count" style={{ color }}>{c.count}</span>
             </div>
           );
         })}
@@ -320,15 +239,4 @@ function ProgressBuckets({ stats }: { stats: StatsType }) {
   );
 }
 
-function RecentActivity({ stats }: { stats: StatsType }) {
-  const r = stats.recent;
-  return (
-    <div className="stats-section">
-      <h3>近期动态</h3>
-      <div className="stats-grid">
-        <div className="stats-card"><div className="count">{r.new_month}</div><div className="label">近30天新增</div></div>
-        <div className="stats-card"><div className="count">{r.completed_month}</div><div className="label">近30天完成</div></div>
-      </div>
-    </div>
-  );
-}
+
