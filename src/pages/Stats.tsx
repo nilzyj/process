@@ -180,7 +180,6 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
           const isOpen = expanded === yr.year;
           const pct = Math.round((yr.total / maxYearTotal) * 100);
           const color = colors[i % colors.length];
-          const maxMonthCount = isOpen ? Math.max(...yr.months.map((m) => m.count), 1) : 0;
           return (
             <div key={yr.year}>
               <div className="stats-bar-item clickable" onClick={() => setExpanded(isOpen ? null : yr.year)}>
@@ -196,16 +195,12 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
               </div>
               {isOpen && (
                 <div className="mt-month-grid">
-                  {yr.months.map((m, idx) => {
-                    const pct = maxMonthCount > 0 ? Math.round((m.count / maxMonthCount) * 100) : 0;
-                    const alpha = m.count === 0 ? 0.06 : Math.max(0.15, pct / 100);
-                    return (
-                      <div key={m.month} className="mt-cell" style={{ background: `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`, color }}>
-                        <span className="mt-cell-month">{idx + 1}月</span>
-                        <span className="mt-cell-count">{m.count}</span>
-                      </div>
-                    );
-                  })}
+                  {yr.months.map((m, idx) => (
+                    <div key={m.month} className="mt-cell" style={{ background: `${color}15` }}>
+                      <span className="mt-cell-month">{idx + 1}月</span>
+                      <span className="mt-cell-count" style={{ color: m.count > 0 ? color : 'var(--text-muted)' }}>{m.count}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
