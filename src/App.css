@@ -709,15 +709,15 @@ input, textarea, select {
   display: flex;
   align-items: flex-end;
   gap: 4px;
-  padding: 4px 16px 4px 20px;
-  height: 70px;
+  padding: 6px 16px 4px 20px;
+  height: 80px;
 }
 
 .mt-month-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -725,12 +725,11 @@ input, textarea, select {
 }
 
 .mt-month-bar-wrap {
-  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   width: 100%;
-  height: 50px;
+  height: 55px;
 }
 
 .mt-month-bar {
@@ -743,16 +742,10 @@ input, textarea, select {
 }
 
 .mt-month-val {
-  position: absolute;
-  top: -13px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: var(--text-secondary);
   line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
 }
 
 .mt-month-label {

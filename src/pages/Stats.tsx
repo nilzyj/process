@@ -188,12 +188,12 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
                 <div className="mt-month-grid">
                   {yr.months.map((m) => {
                     const mo = m.month.split('-')[1];
-                    const barH = Math.max(Math.round((m.count / maxMonthCount) * 60), 3);
+                    const barH = Math.max(Math.round((m.count / maxMonthCount) * 55), 3);
                     return (
                       <div key={m.month} className="mt-month-item">
+                        <span className="mt-month-val">{m.count}</span>
                         <div className="mt-month-bar-wrap">
                           <div className="mt-month-bar" style={{ height: barH, background: color }} />
-                          <span className="mt-month-val">{m.count}</span>
                         </div>
                         <span className="mt-month-label">{mo}月</span>
                       </div>
