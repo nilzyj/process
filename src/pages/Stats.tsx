@@ -31,14 +31,14 @@ export default function Stats() {
     <div className="stats-page">
       <SummaryCards stats={stats} />
       <div className="stats-row">
-        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="stats-section" style={{ paddingRight: 0 }}>
             <h3>活动热力图</h3>
             <ActivityHeatmap data={stats.daily_activity} />
           </div>
           <CountryDist stats={stats} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <YearDist stats={stats} />
         </div>
       </div>
