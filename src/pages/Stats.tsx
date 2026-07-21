@@ -233,14 +233,15 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
       <div className="monthly-grid">
         {monthly.map((m) => {
           const pct = Math.round((m.count / maxCount) * 100);
-          const [, mo] = m.month.split('-');
+          const [y, mo] = m.month.split('-');
+          const shortYear = y.slice(2);
           return (
             <div key={m.month} className="monthly-item">
               <span className="monthly-val">{m.count}</span>
               <div className="monthly-bar-wrap">
                 <div className="monthly-bar" style={{ height: `${Math.max(pct, 3)}%` }} />
               </div>
-              <span className="monthly-label">{mo}月</span>
+              <span className="monthly-label">{shortYear}.{mo}</span>
             </div>
           );
         })}
