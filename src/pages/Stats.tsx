@@ -33,7 +33,7 @@ export default function Stats() {
       <SummaryCards stats={stats} />
       <CompletionRates stats={stats} />
       <TypeStatusCross stats={stats} />
-      <AnnualTrends stats={stats} />
+      <YearDist stats={stats} />
       <MonthlyTimeline data={stats.daily_activity} />
       <CountryDist stats={stats} />
       <TagDist stats={stats} />
@@ -148,25 +148,38 @@ function TypeStatusCross({ stats }: { stats: StatsType }) {
   );
 }
 
-function AnnualTrends({ stats }: { stats: StatsType }) {
-  const maxCount = Math.max(...stats.by_year.map((y) => y.count), 1);
+function YearDist({ stats }: { stats: StatsType }) {
+  const decades = useMemo(() => {
+    if (stats.by_year.length <= 3) {
+      return stats.by_year.map((y) => ({ label: `${y.year}年`, count: y.count }));
+    }
+    const map = new Map<number, number>();
+    for (const y of stats.by_year) {
+      const d = Math.floor(y.year / 10) * 10;
+      map.set(d, (map.get(d) || 0) + y.count);
+    }
+    return Array.from(map.entries())
+      .map(([decade, count]) => ({ label: `${decade}年代`, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [stats.by_year]);
+
+  if (!decades.length) return null;
+  const maxCount = Math.max(...decades.map((d) => d.count), 1);
+
   return (
-    <div className="stats-section stats-section-half">
-      <h3>年度趋势</h3>
+    <div className="stats-section">
+      <h3>发行年份</h3>
       <div className="stats-bar-list">
-        {stats.by_year.map((y) => {
-          const pct = Math.round((y.count / maxCount) * 100);
-          return (
-            <div key={y.year} className="stats-bar-item">
-              <span className="label">{y.year}</span>
-              <div className="stats-bar-track">
-                <div className="stats-bar-fill" style={{ width: `${pct}%`, background: '#f97316' }}>
-                  {y.count}
-                </div>
+        {decades.map((d) => (
+          <div key={d.label} className="stats-bar-item">
+            <span className="label">{d.label}</span>
+            <div className="stats-bar-track">
+              <div className="stats-bar-fill" style={{ width: `${Math.round((d.count / maxCount) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)' }}>
+                {d.count}
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );
