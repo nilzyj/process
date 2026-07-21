@@ -922,3 +922,75 @@ input, textarea, select {
   border-radius: 20px;
   margin: 2px;
 }
+
+.series-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.series-card {
+  flex: 1 1 220px;
+  border: 1px solid;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.series-card:hover {
+  transform: translateY(-2px);
+}
+
+.series-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.series-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.series-total {
+  font-size: 22px;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.series-bar {
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.series-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.series-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.series-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.series-type-pill {
+  font-size: 10px;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 8px;
+  white-space: nowrap;
+}

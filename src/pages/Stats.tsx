@@ -44,6 +44,7 @@ export default function Stats() {
       </div>
       <MonthlyTimeline stats={stats} />
       <TagDist stats={stats} />
+      <SeriesDist stats={stats} />
       <ProgressBuckets stats={stats} />
     </div>
   );
@@ -217,6 +218,44 @@ function TagDist({ stats }: { stats: StatsType }) {
             <div key={t.tag} className="pill" style={{ borderColor: `${color}44`, background: `${color}14` }}>
               <span className="pill-name" style={{ color }}>{t.tag}</span>
               <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SeriesDist({ stats }: { stats: StatsType }) {
+  if (!stats.series_stats.length) return null;
+  const palette = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1'];
+  return (
+    <div className="stats-section">
+      <h3>系列统计</h3>
+      <div className="series-grid">
+        {stats.series_stats.map((s, i) => {
+          const color = palette[i % palette.length];
+          const rate = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+          return (
+            <div key={s.tag} className="series-card" style={{ borderColor: `${color}33`, background: `${color}08` }}>
+              <div className="series-header" style={{ color }}>
+                <span className="series-name">{s.tag}</span>
+                <span className="series-total">{s.total}</span>
+              </div>
+              <div className="series-bar">
+                <div className="series-bar-fill" style={{ width: `${rate}%`, background: color }} />
+              </div>
+              <div className="series-meta">
+                <span className="series-completed" style={{ color: `${color}cc` }}>{s.completed} 已完成</span>
+                <span className="series-rate" style={{ color: `${color}99` }}>{rate}%</span>
+              </div>
+              <div className="series-types">
+                {s.by_type.map((t) => (
+                  <span key={t.media_type} className="series-type-pill" style={{ borderColor: `${color}33`, color: `${color}bb` }}>
+                    {t.media_type} {t.count}
+                  </span>
+                ))}
+              </div>
             </div>
           );
         })}

@@ -210,6 +210,12 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
             .fetch_all(pool)
             .await?;
 
+    // Series/franchise stats
+    let series_rows: Vec<(Option<String>, Option<String>, Option<String>)> =
+        sqlx::query_as("SELECT tags, `type`, status FROM `process` WHERE tags IS NOT NULL AND tags != ''")
+            .fetch_all(pool)
+            .await?;
+
     let daily: Vec<(String, i64)> =
         sqlx::query_as("SELECT DATE_FORMAT(modify_time, '%Y-%m-%d') as day, COUNT(*) as c FROM `process` WHERE modify_time IS NOT NULL GROUP BY DATE_FORMAT(modify_time, '%Y-%m-%d') ORDER BY day")
             .fetch_all(pool)
@@ -278,6 +284,43 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
         .collect();
     by_tags.sort_by(|a, b| b.count.cmp(&a.count));
 
+    // Series/franchise stats
+    struct SeriesEntry {
+        total: i64,
+        completed: i64,
+        types: std::collections::HashMap<String, i64>,
+    }
+    let mut series_map: std::collections::HashMap<String, SeriesEntry> = std::collections::HashMap::new();
+    fn is_series_tag(tag: &str) -> bool {
+        tag.contains("系列") || tag.contains("宇宙") || tag.contains("传奇") || tag.contains("纪")
+    }
+    for (t, media_type, status) in &series_rows {
+        if let Some(tags_str) = t {
+            for tag in tags_str.split(',') {
+                let trimmed = tag.trim();
+                if !trimmed.is_empty() && is_series_tag(trimmed) {
+                    let entry = series_map.entry(trimmed.to_string()).or_insert(SeriesEntry { total: 0, completed: 0, types: std::collections::HashMap::new() });
+                    entry.total += 1;
+                    if status.as_deref() == Some("已完成") {
+                        entry.completed += 1;
+                    }
+                    if let Some(mt) = media_type {
+                        *entry.types.entry(mt.clone()).or_insert(0) += 1;
+                    }
+                }
+            }
+        }
+    }
+    let mut series_stats: Vec<SeriesStat> = series_map
+        .into_iter()
+        .map(|(tag, entry)| {
+            let mut by_type: Vec<TypeCount> = entry.types.into_iter().map(|(media_type, count)| TypeCount { media_type, count }).collect();
+            by_type.sort_by(|a, b| b.count.cmp(&a.count));
+            SeriesStat { tag, total: entry.total, completed: entry.completed, by_type }
+        })
+        .collect();
+    series_stats.sort_by(|a, b| b.total.cmp(&a.total));
+
     // Compute completion rates per type
     let mut rate_map: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
     for (t, s, c) in &type_status {
@@ -300,6 +343,7 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
         by_year: by_year.into_iter().map(|(y, c)| YearCount { year: y, count: c }).collect(),
         by_country: by_country.into_iter().map(|(c, n)| CountryCount { country: c, count: n }).collect(),
         by_tags,
+        series_stats,
         progress_buckets: vec![
             ProgressBucket { label: "0-25%".into(), count: buckets[0] },
             ProgressBucket { label: "25-50%".into(), count: buckets[1] },

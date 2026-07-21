@@ -45,6 +45,13 @@ export interface PaginatedResult {
   total: number;
 }
 
+export interface SeriesStat {
+  tag: string;
+  total: number;
+  completed: number;
+  by_type: { media_type: string; count: number }[];
+}
+
 export interface Stats {
   total: number;
   by_type: { media_type: string; count: number }[];
@@ -52,6 +59,7 @@ export interface Stats {
   by_year: { year: number; count: number }[];
   by_country: { country: string; count: number }[];
   by_tags: { tag: string; count: number }[];
+  series_stats: SeriesStat[];
   progress_buckets: { label: string; count: number }[];
   type_status: { media_type: string; status: string; count: number }[];
   completion_rates: { media_type: string; completed: number; total: number }[];
