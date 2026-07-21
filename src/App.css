@@ -887,6 +887,11 @@ input, textarea, select {
   padding: 4px 0;
 }
 
+.pill-grid > div {
+  display: flex;
+  flex-direction: column;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -898,9 +903,22 @@ input, textarea, select {
   cursor: default;
 }
 
+.pill.clickable {
+  cursor: pointer;
+}
+
 .pill:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.pill-records {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .pill-name {

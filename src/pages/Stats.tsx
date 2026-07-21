@@ -232,6 +232,9 @@ function CountryDist({ stats }: { stats: StatsType }) {
 }
 
 function TagDist({ stats }: { stats: StatsType }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [records, setRecords] = useState<MediaRecord[]>([]);
+  const [loading, setLoading] = useState(false);
   if (!stats.by_tags.length) return null;
   const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5','#FF2E63','#6C5B7B'];
   return (
@@ -240,10 +243,46 @@ function TagDist({ stats }: { stats: StatsType }) {
       <div className="pill-grid">
         {stats.by_tags.map((t, i) => {
           const color = palette[i % palette.length];
+          const isOpen = expanded === t.tag;
           return (
-            <div key={t.tag} className="pill" style={{ borderColor: `${color}44`, background: `${color}14` }}>
-              <span className="pill-name" style={{ color }}>{t.tag}</span>
-              <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
+            <div key={t.tag}>
+              <div
+                className="pill clickable"
+                style={{ borderColor: `${color}44`, background: `${color}14` }}
+                onClick={async () => {
+                  if (isOpen) { setExpanded(null); setRecords([]); return; }
+                  setExpanded(t.tag);
+                  setLoading(true);
+                  try {
+                    const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
+                      filter: { tag: t.tag, page: 1, page_size: 200 },
+                    });
+                    setRecords(res.records);
+                  } catch { setRecords([]); } finally { setLoading(false); }
+                }}
+              >
+                <span className="pill-name" style={{ color }}>{t.tag}</span>
+                <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
+              </div>
+              {isOpen && (
+                <div className="pill-records">
+                  {loading ? (
+                    <span className="series-loading">加载中...</span>
+                  ) : records.length === 0 ? (
+                    <span className="series-loading">暂无记录</span>
+                  ) : (
+                    records.map((r) => (
+                      <div key={r.id} className="series-record-item" style={{ borderLeftColor: color }}>
+                        <span className="sr-name">{r.record_name}</span>
+                        <span className="sr-meta">
+                          {r.media_type && <span className="sr-type">{r.media_type}</span>}
+                          {r.status && <span className="sr-status">{r.status}</span>}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
