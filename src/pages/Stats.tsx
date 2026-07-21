@@ -186,16 +186,16 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
               </div>
               {isOpen && (
                 <div className="mt-month-grid">
-                  {yr.months.map((m) => {
-                    const mo = m.month.split('-')[1];
-                    const barH = Math.max(Math.round((m.count / maxMonthCount) * 55), 3);
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const mk = `${yr.year}-${String(i + 1).padStart(2, '0')}`;
+                    const found = yr.months.find((m) => m.month === mk);
+                    const count = found?.count ?? 0;
+                    const pct = maxMonthCount > 0 ? Math.round((count / maxMonthCount) * 100) : 0;
+                    const alpha = count === 0 ? 0.04 : Math.max(0.15, pct / 100);
                     return (
-                      <div key={m.month} className="mt-month-item">
-                        <span className="mt-month-val">{m.count}</span>
-                        <div className="mt-month-bar-wrap">
-                          <div className="mt-month-bar" style={{ height: barH, background: color }} />
-                        </div>
-                        <span className="mt-month-label">{mo}月</span>
+                      <div key={mk} className="mt-cell" style={{ background: `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`, color }}>
+                        <span className="mt-cell-month">{i + 1}月</span>
+                        {count > 0 && <span className="mt-cell-count">{count}</span>}
                       </div>
                     );
                   })}
