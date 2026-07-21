@@ -35,12 +35,12 @@ export default function Stats() {
           <h3>活动热力图</h3>
           <ActivityHeatmap data={stats.daily_activity} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div className="stats-sidebar" style={{ flex: 1 }}>
           <YearDist stats={stats} />
+          <CountryDist stats={stats} />
         </div>
       </div>
       <MonthlyTimeline stats={stats} />
-      <CountryDist stats={stats} />
       <TagDist stats={stats} />
       <ProgressBuckets stats={stats} />
     </div>

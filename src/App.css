@@ -683,6 +683,16 @@ input, textarea, select {
   gap: 16px;
 }
 
+.stats-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-sidebar > .stats-section {
+  margin: 0;
+}
+
 .stats-section-half {
   flex: 1;
   min-width: 0;
