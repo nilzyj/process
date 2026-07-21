@@ -887,10 +887,7 @@ input, textarea, select {
   padding: 4px 0;
 }
 
-.pill-grid > div {
-  display: flex;
-  flex-direction: column;
-}
+
 
 .pill {
   display: inline-flex;
@@ -912,12 +909,34 @@ input, textarea, select {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-.pill-records {
-  margin-top: 6px;
+.pill-popover {
+  position: fixed;
+  z-index: 999;
+  min-width: 260px;
+  max-width: 360px;
+  background: #1a1a2e;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.pill-popover-arrow {
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid;
+}
+
+.pill-popover-list {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
 }
 

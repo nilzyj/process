@@ -232,9 +232,24 @@ function CountryDist({ stats }: { stats: StatsType }) {
 }
 
 function TagDist({ stats }: { stats: StatsType }) {
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [popover, setPopover] = useState<{ tag: string; color: string; left: number; top: number } | null>(null);
   const [records, setRecords] = useState<MediaRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const refMap = useMemo(() => new Map<string, HTMLDivElement>(), []);
+
+  useEffect(() => {
+    if (!popover) return;
+    const handler = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      if (!el.closest('.pill-popover') && !el.closest('.pill.clickable')) {
+        setPopover(null);
+        setRecords([]);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [popover]);
+
   if (!stats.by_tags.length) return null;
   const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5','#FF2E63','#6C5B7B'];
   return (
@@ -243,50 +258,57 @@ function TagDist({ stats }: { stats: StatsType }) {
       <div className="pill-grid">
         {stats.by_tags.map((t, i) => {
           const color = palette[i % palette.length];
-          const isOpen = expanded === t.tag;
           return (
-            <div key={t.tag}>
-              <div
-                className="pill clickable"
-                style={{ borderColor: `${color}44`, background: `${color}14` }}
-                onClick={async () => {
-                  if (isOpen) { setExpanded(null); setRecords([]); return; }
-                  setExpanded(t.tag);
-                  setLoading(true);
-                  try {
-                    const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
-                      filter: { tag: t.tag, page: 1, page_size: 200 },
-                    });
-                    setRecords(res.records);
-                  } catch { setRecords([]); } finally { setLoading(false); }
-                }}
-              >
-                <span className="pill-name" style={{ color }}>{t.tag}</span>
-                <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
-              </div>
-              {isOpen && (
-                <div className="pill-records">
-                  {loading ? (
-                    <span className="series-loading">加载中...</span>
-                  ) : records.length === 0 ? (
-                    <span className="series-loading">暂无记录</span>
-                  ) : (
-                    records.map((r) => (
-                      <div key={r.id} className="series-record-item" style={{ borderLeftColor: color }}>
-                        <span className="sr-name">{r.record_name}</span>
-                        <span className="sr-meta">
-                          {r.media_type && <span className="sr-type">{r.media_type}</span>}
-                          {r.status && <span className="sr-status">{r.status}</span>}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
+            <div
+              key={t.tag}
+              ref={(el) => { if (el) refMap.set(t.tag, el); }}
+              className="pill clickable"
+              style={{ borderColor: `${color}44`, background: `${color}14` }}
+              onClick={async () => {
+                if (popover?.tag === t.tag) { setPopover(null); setRecords([]); return; }
+                const rect = refMap.get(t.tag)?.getBoundingClientRect();
+                if (!rect) return;
+                setPopover({ tag: t.tag, color, left: rect.left, top: rect.bottom + 4 });
+                setLoading(true);
+                try {
+                  const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
+                    filter: { tag: t.tag, page: 1, page_size: 200 },
+                  });
+                  setRecords(res.records);
+                } catch { setRecords([]); } finally { setLoading(false); }
+              }}
+            >
+              <span className="pill-name" style={{ color }}>{t.tag}</span>
+              <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
             </div>
           );
         })}
       </div>
+      {popover && (
+        <div
+          className="pill-popover"
+          style={{ left: popover.left, top: popover.top }}
+        >
+          <div className="pill-popover-arrow" style={{ borderBottomColor: popover.color }} />
+          {loading ? (
+            <div className="series-loading">加载中...</div>
+          ) : records.length === 0 ? (
+            <div className="series-loading">暂无记录</div>
+          ) : (
+            <div className="pill-popover-list">
+              {records.map((r) => (
+                <div key={r.id} className="series-record-item" style={{ borderLeftColor: popover.color }}>
+                  <span className="sr-name">{r.record_name}</span>
+                  <span className="sr-meta">
+                    {r.media_type && <span className="sr-type">{r.media_type}</span>}
+                    {r.status && <span className="sr-status">{r.status}</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
