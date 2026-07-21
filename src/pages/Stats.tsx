@@ -149,18 +149,21 @@ function TypeStatusCross({ stats }: { stats: StatsType }) {
 }
 
 function YearDist({ stats }: { stats: StatsType }) {
-  const decades = useMemo(() => {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const { decades, isGrouped } = useMemo(() => {
     if (stats.by_year.length <= 3) {
-      return stats.by_year.map((y) => ({ label: `${y.year}年`, count: y.count }));
+      return { decades: stats.by_year.map((y) => ({ label: `${y.year}年`, count: y.count, decade: 0 })), isGrouped: false };
     }
     const map = new Map<number, number>();
     for (const y of stats.by_year) {
       const d = Math.floor(y.year / 10) * 10;
       map.set(d, (map.get(d) || 0) + y.count);
     }
-    return Array.from(map.entries())
-      .map(([decade, count]) => ({ label: `${decade}年代`, count }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    return {
+      decades: Array.from(map.entries()).map(([decade, count]) => ({ label: `${decade}年代`, count, decade })).sort((a, b) => a.label.localeCompare(b.label)),
+      isGrouped: true,
+    };
   }, [stats.by_year]);
 
   if (!decades.length) return null;
@@ -170,16 +173,47 @@ function YearDist({ stats }: { stats: StatsType }) {
     <div className="stats-section">
       <h3>发行年份</h3>
       <div className="stats-bar-list">
-        {decades.map((d) => (
-          <div key={d.label} className="stats-bar-item">
-            <span className="label">{d.label}</span>
-            <div className="stats-bar-track">
-              <div className="stats-bar-fill" style={{ width: `${Math.round((d.count / maxCount) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)' }}>
-                {d.count}
+        {decades.map((d) => {
+          const isOpen = expanded === d.label;
+          const children = isGrouped && isOpen
+            ? stats.by_year.filter((y) => Math.floor(y.year / 10) * 10 === d.decade)
+            : [];
+          return (
+            <div key={d.label}>
+              <div
+                className={`stats-bar-item${isGrouped ? ' clickable' : ''}`}
+                onClick={() => isGrouped && setExpanded(isOpen ? null : d.label)}
+              >
+                <span className="label">
+                  {isGrouped && <span className="yd-arrow">{isOpen ? '▼' : '▶'}</span>}
+                  {d.label}
+                </span>
+                <div className="stats-bar-track">
+                  <div className="stats-bar-fill" style={{ width: `${Math.round((d.count / maxCount) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)' }}>
+                    {d.count}
+                  </div>
+                </div>
               </div>
+              {children.length > 0 && (
+                <div className="yd-children">
+                  {children.map((y) => {
+                    const childPct = Math.round((y.count / d.count) * 100);
+                    return (
+                      <div key={y.year} className="stats-bar-item yd-child">
+                        <span className="label">{y.year}年</span>
+                        <div className="stats-bar-track">
+                          <div className="stats-bar-fill" style={{ width: `${childPct}%`, background: '#fdba74' }}>
+                            {y.count}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
