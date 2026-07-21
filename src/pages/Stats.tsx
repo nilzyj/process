@@ -191,11 +191,11 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
                     const found = yr.months.find((m) => m.month === mk);
                     const count = found?.count ?? 0;
                     const pct = maxMonthCount > 0 ? Math.round((count / maxMonthCount) * 100) : 0;
-                    const alpha = count === 0 ? 0.04 : Math.max(0.15, pct / 100);
+                    const alpha = count === 0 ? 0.06 : Math.max(0.15, pct / 100);
                     return (
                       <div key={mk} className="mt-cell" style={{ background: `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`, color }}>
                         <span className="mt-cell-month">{i + 1}月</span>
-                        {count > 0 && <span className="mt-cell-count">{count}</span>}
+                        <span className="mt-cell-count">{count}</span>
                       </div>
                     );
                   })}
