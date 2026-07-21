@@ -849,20 +849,21 @@ input, textarea, select {
 /* Country Cards */
 .country-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   padding: 4px 0;
+  overflow-x: auto;
 }
 
 .country-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 16px;
+  gap: 4px;
+  padding: 8px 12px;
   border: 1px solid;
-  border-radius: 12px;
-  min-width: 70px;
+  border-radius: 10px;
+  min-width: 54px;
+  flex-shrink: 0;
   transition: all 0.2s;
   cursor: default;
 }
@@ -873,12 +874,12 @@ input, textarea, select {
 }
 
 .cc-flag {
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1;
 }
 
 .cc-count {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
 }
