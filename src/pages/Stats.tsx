@@ -173,18 +173,6 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
 }
 
 function CountryDist({ stats }: { stats: StatsType }) {
-  const flags: Record<string, string> = {
-    '日本':'🇯🇵','美国':'🇺🇸','中国':'🇨🇳','中国大陆':'🇨🇳','韩国':'🇰🇷',
-    '英国':'🇬🇧','法国':'🇫🇷','德国':'🇩🇪','意大利':'🇮🇹','西班牙':'🇪🇸',
-    '俄罗斯':'🇷🇺','加拿大':'🇨🇦','澳大利亚':'🇦🇺','印度':'🇮🇳','泰国':'🇹🇭',
-    '台湾':'🇹🇼','香港':'🇭🇰','澳门':'🇲🇴','巴西':'🇧🇷','墨西哥':'🇲🇽',
-    '荷兰':'🇳🇱','瑞典':'🇸🇪','瑞士':'🇨🇭','比利时':'🇧🇪','奥地利':'🇦🇹',
-    '挪威':'🇳🇴','丹麦':'🇩🇰','芬兰':'🇫🇮','爱尔兰':'🇮🇪','葡萄牙':'🇵🇹',
-    '波兰':'🇵🇱','土耳其':'🇹🇷','希腊':'🇬🇷','捷克':'🇨🇿','阿根廷':'🇦🇷',
-    '新西兰':'🇳🇿','新加坡':'🇸🇬','马来西亚':'🇲🇾','菲律宾':'🇵🇭','越南':'🇻🇳',
-    '乌克兰':'🇺🇦','罗马尼亚':'🇷🇴','匈牙利':'🇭🇺','以色列':'🇮🇱','埃及':'🇪🇬',
-    '南非':'🇿🇦','印尼':'🇮🇩',
-  };
   const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5'];
   if (!stats.by_country.length) return null;
   return (
@@ -195,8 +183,8 @@ function CountryDist({ stats }: { stats: StatsType }) {
           const color = palette[i % palette.length];
           return (
             <div key={c.country} className="country-card" style={{ borderColor: `${color}33`, background: `${color}0a` }}>
-              <span className="cc-flag">{flags[c.country] || '🌍'}</span>
-              <span className="cc-count" style={{ color }}>{c.count}</span>
+              <span className="cc-name" style={{ color }}>{c.country}</span>
+              <span className="cc-count" style={{ color: `${color}bb` }}>{c.count}</span>
             </div>
           );
         })}

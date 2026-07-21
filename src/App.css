@@ -873,13 +873,14 @@ input, textarea, select {
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 
-.cc-flag {
-  font-size: 22px;
+.cc-name {
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1;
 }
 
 .cc-count {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1;
 }
