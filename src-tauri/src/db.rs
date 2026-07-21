@@ -305,6 +305,16 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
         .collect();
     by_tags.sort_by(|a, b| b.count.cmp(&a.count));
 
+    // Tag + type breakdown
+    let tag_types: Vec<(String, String, i64)> =
+        sqlx::query_as("SELECT tags, COALESCE(`type`,'未知') as t, COUNT(*) as c FROM `process` WHERE tags IS NOT NULL AND tags != '' GROUP BY tags, `type` ORDER BY tags")
+            .fetch_all(pool)
+            .await?;
+    let tag_types: Vec<TagTypeCount> = tag_types
+        .into_iter()
+        .map(|(tag, media_type, count)| TagTypeCount { tag, media_type, count })
+        .collect();
+
     // Series/franchise stats
     struct SeriesEntry {
         total: i64,
@@ -313,7 +323,7 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
     }
     let mut series_map: std::collections::HashMap<String, SeriesEntry> = std::collections::HashMap::new();
     fn is_series_tag(tag: &str) -> bool {
-        tag.contains("系列") || tag.contains("宇宙") || tag.contains("传奇") || tag.contains("纪") || tag == "哆啦A梦"
+        tag.contains("系列") || tag.contains("宇宙") || tag.contains("传奇") || tag.contains("纪")
     }
     for (t, media_type, status) in &series_rows {
         if let Some(tags_str) = t {
@@ -364,6 +374,7 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
         by_year: by_year.into_iter().map(|(y, c)| YearCount { year: y, count: c }).collect(),
         by_country: by_country.into_iter().map(|(c, n)| CountryCount { country: c, count: n }).collect(),
         by_tags,
+        tag_types,
         series_stats,
         progress_buckets: vec![
             ProgressBucket { label: "0-25%".into(), count: buckets[0] },

@@ -62,6 +62,7 @@ export interface Stats {
   by_year: { year: number; count: number }[];
   by_country: { country: string; count: number }[];
   by_tags: { tag: string; count: number }[];
+  tag_types: { tag: string; media_type: string; count: number }[];
   series_stats: SeriesStat[];
   progress_buckets: { label: string; count: number }[];
   type_status: { media_type: string; status: string; count: number }[];

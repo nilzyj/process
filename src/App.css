@@ -908,6 +908,21 @@ input, textarea, select {
   vertical-align: super;
 }
 
+.tag-section-label {
+  font-size: 12px;
+  opacity: 0.5;
+  margin-bottom: 4px;
+  margin-top: 8px;
+}
+
+.tag-section-label:first-child {
+  margin-top: 0;
+}
+
+.series-tag-list {
+  gap: 6px 12px;
+}
+
 
 
 .pill {

@@ -56,6 +56,7 @@ pub struct Stats {
     pub by_year: Vec<YearCount>,
     pub by_country: Vec<CountryCount>,
     pub by_tags: Vec<TagCount>,
+    pub tag_types: Vec<TagTypeCount>,
     pub series_stats: Vec<SeriesStat>,
     pub progress_buckets: Vec<ProgressBucket>,
     pub type_status: Vec<TypeStatusCount>,
@@ -100,6 +101,13 @@ pub struct CountryCount {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TagCount {
     pub tag: String,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TagTypeCount {
+    pub tag: String,
+    pub media_type: String,
     pub count: i64,
 }
 
