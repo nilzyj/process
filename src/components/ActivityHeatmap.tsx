@@ -39,13 +39,13 @@ export default function ActivityHeatmap({ data }: Props) {
   }, [countMap]);
 
   const getColor = (count: number) => {
-    if (maxCount === 0) return '#161b22';
+    if (maxCount === 0) return '#F5EBE0';
     const r = count / maxCount;
-    if (r === 0) return '#161b22';
-    if (r <= 0.25) return '#0e4429';
-    if (r <= 0.5) return '#006d32';
-    if (r <= 0.75) return '#26a641';
-    return '#39d353';
+    if (r === 0) return '#F5EBE0';
+    if (r <= 0.25) return '#FFE0B2';
+    if (r <= 0.5) return '#FFCC80';
+    if (r <= 0.75) return '#FFAB91';
+    return '#F48FB1';
   };
 
   const months = useMemo(() => {
