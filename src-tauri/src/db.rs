@@ -108,8 +108,8 @@ pub async fn add_record(pool: &MySqlPool, record: NewRecord) -> Result<i64> {
 
     let result = sqlx::query(
         r#"INSERT INTO `process` 
-        (record_name, season, remark, `type`, status, end_time, country, tags, current_episode, total_episode, `year`)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+        (record_name, season, remark, `type`, status, end_time, country, tags, current_episode, total_episode, `year`, modify_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"#,
     )
     .bind(&record.record_name)
     .bind(record.season)
@@ -138,7 +138,8 @@ pub async fn update_record(pool: &MySqlPool, record: UpdateRecord) -> Result<boo
     let rows = sqlx::query(
         r#"UPDATE `process` SET 
         record_name=?, season=?, remark=?, `type`=?, status=?, 
-        end_time=?, country=?, tags=?, current_episode=?, total_episode=?, `year`=?
+        end_time=?, country=?, tags=?, current_episode=?, total_episode=?, `year`=?,
+        modify_time=NOW()
         WHERE id=?"#,
     )
     .bind(&record.record_name)
