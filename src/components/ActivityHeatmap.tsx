@@ -66,7 +66,6 @@ export default function ActivityHeatmap({ data }: Props) {
   return (
     <div className="heatmap">
       <div className="heatmap-months">
-        <span className="hm-spacer" />
         {months.map((m, i) => (
           <span
             key={m.label}
@@ -78,11 +77,6 @@ export default function ActivityHeatmap({ data }: Props) {
         ))}
       </div>
       <div className="heatmap-body">
-        <div className="hm-day-labels">
-          {['Mon','','Wed','','Fri','',''].map((l, i) => (
-            <span key={i} className="hm-day-label">{l}</span>
-          ))}
-        </div>
         <div className="hm-grid">
           {weeks.map((week, wi) => (
             <div key={wi} className="hm-col">

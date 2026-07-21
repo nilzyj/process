@@ -755,32 +755,14 @@ input, textarea, select {
   align-items: center;
   font-size: 10px;
   color: var(--text-muted);
-  margin-left: 30px;
   margin-bottom: 3px;
   height: 14px;
 }
 
-.hm-spacer { width: 0; }
 .hm-month-label { white-space: nowrap; }
 
 .heatmap-body {
   display: flex;
-  gap: 3px;
-}
-
-.hm-day-labels {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  width: 26px;
-  flex-shrink: 0;
-}
-
-.hm-day-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  height: 14px;
-  line-height: 14px;
 }
 
 .hm-grid {
@@ -814,7 +796,6 @@ input, textarea, select {
   align-items: center;
   gap: 4px;
   margin-top: 10px;
-  margin-left: 30px;
   font-size: 10px;
   color: var(--text-muted);
 }
