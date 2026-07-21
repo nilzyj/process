@@ -39,6 +39,7 @@ pub async fn list_records(
     let mut search_param: Option<String> = None;
     let mut type_param: Option<String> = None;
     let mut status_param: Option<String> = None;
+    let mut tag_param: Option<String> = None;
 
     if let Some(ref s) = filter.search {
         if !s.is_empty() {
@@ -58,6 +59,12 @@ pub async fn list_records(
             where_conditions.push("status = ?".to_string());
         }
     }
+    if let Some(ref t) = filter.tag {
+        if !t.is_empty() {
+            tag_param = Some(format!("%{}%", t));
+            where_conditions.push("tags LIKE ?".to_string());
+        }
+    }
 
     let where_clause = if where_conditions.is_empty() {
         String::new()
@@ -71,6 +78,7 @@ pub async fn list_records(
     if let Some(ref v) = search_param { count_query = count_query.bind(v); }
     if let Some(ref v) = type_param { count_query = count_query.bind(v); }
     if let Some(ref v) = status_param { count_query = count_query.bind(v); }
+    if let Some(ref v) = tag_param { count_query = count_query.bind(v); }
     let total: (i64,) = count_query.fetch_one(pool).await?;
 
     // Data query
@@ -82,6 +90,7 @@ pub async fn list_records(
     if let Some(ref v) = search_param { data_query = data_query.bind(v); }
     if let Some(ref v) = type_param { data_query = data_query.bind(v); }
     if let Some(ref v) = status_param { data_query = data_query.bind(v); }
+    if let Some(ref v) = tag_param { data_query = data_query.bind(v); }
     data_query = data_query.bind(page_size).bind(offset);
     let records: Vec<RecordRow> = data_query.fetch_all(pool).await?;
 

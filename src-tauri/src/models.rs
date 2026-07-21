@@ -150,6 +150,7 @@ pub struct RecordFilter {
     pub search: Option<String>,
     pub media_type: Option<String>,
     pub status: Option<String>,
+    pub tag: Option<String>,
     pub page: Option<i64>,
     pub page_size: Option<i64>,
 }

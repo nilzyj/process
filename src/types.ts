@@ -36,6 +36,7 @@ export interface RecordFilter {
   search?: string;
   media_type?: string;
   status?: string;
+  tag?: string;
   page?: number;
   page_size?: number;
 }

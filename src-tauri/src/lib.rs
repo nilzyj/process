@@ -37,6 +37,7 @@ pub fn run() {
                             search: None,
                             media_type: None,
                             status: Some("进行中".to_string()),
+                            tag: None,
                             page: Some(1),
                             page_size: Some(200),
                         };

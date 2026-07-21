@@ -994,3 +994,68 @@ input, textarea, select {
   border-radius: 8px;
   white-space: nowrap;
 }
+
+.series-card-main {
+  cursor: pointer;
+}
+
+.series-records {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.series-loading {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px;
+}
+
+.series-record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-left: 2px solid;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.02);
+  font-size: 12px;
+}
+
+.sr-name {
+  color: var(--text-primary);
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-meta {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sr-type, .sr-country {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.04);
+}
+
+.sr-status {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #22c55e;
+  background: rgba(34,197,94,0.1);
+}

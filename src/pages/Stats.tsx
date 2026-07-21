@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import type { Stats as StatsType } from '../types';
+import type { Stats as StatsType, MediaRecord } from '../types';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 
 export default function Stats() {
@@ -227,6 +227,30 @@ function TagDist({ stats }: { stats: StatsType }) {
 }
 
 function SeriesDist({ stats }: { stats: StatsType }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [records, setRecords] = useState<MediaRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async (tag: string) => {
+    if (expanded === tag) {
+      setExpanded(null);
+      setRecords([]);
+      return;
+    }
+    setExpanded(tag);
+    setLoading(true);
+    try {
+      const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
+        filter: { tag, page: 1, page_size: 200 },
+      });
+      setRecords(res.records);
+    } catch {
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!stats.series_stats.length) return null;
   const palette = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1'];
   return (
@@ -236,26 +260,49 @@ function SeriesDist({ stats }: { stats: StatsType }) {
         {stats.series_stats.map((s, i) => {
           const color = palette[i % palette.length];
           const rate = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+          const isOpen = expanded === s.tag;
           return (
             <div key={s.tag} className="series-card" style={{ borderColor: `${color}33`, background: `${color}08` }}>
-              <div className="series-header" style={{ color }}>
-                <span className="series-name">{s.tag}</span>
-                <span className="series-total">{s.total}</span>
+              <div className="series-card-main" onClick={() => handleClick(s.tag)}>
+                <div className="series-header" style={{ color }}>
+                  <span className="series-name">{s.tag}</span>
+                  <span className="series-total">{s.total}</span>
+                </div>
+                <div className="series-bar">
+                  <div className="series-bar-fill" style={{ width: `${rate}%`, background: color }} />
+                </div>
+                <div className="series-meta">
+                  <span className="series-completed" style={{ color: `${color}cc` }}>{s.completed} 已完成</span>
+                  <span className="series-rate" style={{ color: `${color}99` }}>{rate}%</span>
+                </div>
+                <div className="series-types">
+                  {s.by_type.map((t) => (
+                    <span key={t.media_type} className="series-type-pill" style={{ borderColor: `${color}33`, color: `${color}bb` }}>
+                      {t.media_type} {t.count}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="series-bar">
-                <div className="series-bar-fill" style={{ width: `${rate}%`, background: color }} />
-              </div>
-              <div className="series-meta">
-                <span className="series-completed" style={{ color: `${color}cc` }}>{s.completed} 已完成</span>
-                <span className="series-rate" style={{ color: `${color}99` }}>{rate}%</span>
-              </div>
-              <div className="series-types">
-                {s.by_type.map((t) => (
-                  <span key={t.media_type} className="series-type-pill" style={{ borderColor: `${color}33`, color: `${color}bb` }}>
-                    {t.media_type} {t.count}
-                  </span>
-                ))}
-              </div>
+              {isOpen && (
+                <div className="series-records">
+                  {loading ? (
+                    <div className="series-loading">加载中...</div>
+                  ) : records.length === 0 ? (
+                    <div className="series-loading">暂无记录</div>
+                  ) : (
+                    records.map((r) => (
+                      <div key={r.id} className="series-record-item" style={{ borderLeftColor: color }}>
+                        <span className="sr-name">{r.record_name}</span>
+                        <span className="sr-meta">
+                          {r.media_type && <span className="sr-type">{r.media_type}</span>}
+                          {r.status && <span className="sr-status">{r.status}</span>}
+                          {r.country && <span className="sr-country">{r.country}</span>}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
