@@ -143,22 +143,33 @@ function YearDist({ stats }: { stats: StatsType }) {
 
 function MonthlyTimeline({ stats }: { stats: StatsType }) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const months = useMemo(() => {
-    return stats.monthly_end.sort((a, b) => a.month.localeCompare(b.month));
-  }, [stats.monthly_end]);
   const years = useMemo(() => {
-    const map = new Map<string, { year: string; total: number; months: typeof months }>();
-    for (const m of months) {
-      const y = m.month.split('-')[0];
-      if (!map.has(y)) map.set(y, { year: y, total: 0, months: [] });
-      const entry = map.get(y)!;
-      entry.total += m.count;
-      entry.months.push(m);
+    // Gather years from both monthly_end and by_year
+    const yearSet = new Set<string>();
+    for (const m of stats.monthly_end) {
+      yearSet.add(m.month.split('-')[0]);
     }
-    return Array.from(map.values()).sort((a, b) => a.year.localeCompare(b.year));
-  }, [months]);
-
-  if (!years.length) return null;
+    for (const y of stats.by_year) {
+      yearSet.add(String(y.year));
+    }
+    if (yearSet.size === 0) {
+      yearSet.add(String(new Date().getFullYear()));
+    }
+    const monthMap = new Map<string, number>();
+    for (const m of stats.monthly_end) {
+      monthMap.set(m.month, m.count);
+    }
+    return Array.from(yearSet).sort().map((year) => {
+      let total = 0;
+      const months = Array.from({ length: 12 }, (_, i) => {
+        const mk = `${year}-${String(i + 1).padStart(2, '0')}`;
+        const count = monthMap.get(mk) ?? 0;
+        total += count;
+        return { month: mk, count };
+      });
+      return { year, total, months };
+    });
+  }, [stats]);
   const maxYearTotal = Math.max(...years.map((y) => y.total), 1);
   const colors = ['#22d3ee','#2dd4bf','#34d399','#4ade80','#a3e635','#facc15','#fb923c','#f87171','#c084fc','#818cf8'];
 
@@ -186,16 +197,13 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
               </div>
               {isOpen && (
                 <div className="mt-month-grid">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const mk = `${yr.year}-${String(i + 1).padStart(2, '0')}`;
-                    const found = yr.months.find((m) => m.month === mk);
-                    const count = found?.count ?? 0;
-                    const pct = maxMonthCount > 0 ? Math.round((count / maxMonthCount) * 100) : 0;
-                    const alpha = count === 0 ? 0.06 : Math.max(0.15, pct / 100);
+                  {yr.months.map((m, idx) => {
+                    const pct = maxMonthCount > 0 ? Math.round((m.count / maxMonthCount) * 100) : 0;
+                    const alpha = m.count === 0 ? 0.06 : Math.max(0.15, pct / 100);
                     return (
-                      <div key={mk} className="mt-cell" style={{ background: `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`, color }}>
-                        <span className="mt-cell-month">{i + 1}月</span>
-                        <span className="mt-cell-count">{count}</span>
+                      <div key={m.month} className="mt-cell" style={{ background: `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`, color }}>
+                        <span className="mt-cell-month">{idx + 1}月</span>
+                        <span className="mt-cell-count">{m.count}</span>
                       </div>
                     );
                   })}
