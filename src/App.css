@@ -705,54 +705,48 @@ input, textarea, select {
 
 
 /* Monthly timeline */
-.monthly-grid {
+.mt-month-grid {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 150px;
-  padding: 4px 0 12px;
+  padding: 10px 0 10px 16px;
+  height: 80px;
   overflow-x: auto;
 }
 
-.monthly-item {
-  flex: 1;
+.mt-month-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  height: 100%;
-  justify-content: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
-.monthly-val {
-  font-size: 10px;
-  font-weight: 600;
+.mt-month-val {
+  font-size: 9px;
   color: var(--text-muted);
   line-height: 1;
 }
 
-.monthly-bar-wrap {
-  width: 100%;
-  height: 120px;
+.mt-month-bar-wrap {
+  flex: 1;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  width: 14px;
 }
 
-.monthly-bar {
-  width: 80%;
-  max-width: 28px;
-  min-height: 2px;
-  background: linear-gradient(180deg, var(--accent), #ff4d4d);
-  border-radius: 4px 4px 0 0;
-  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 8px rgba(229, 9, 20, 0.15);
+.mt-month-bar {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 2px 2px 0 0;
+  opacity: 0.75;
+  transition: height 0.3s;
 }
 
-.monthly-label {
-  font-size: 10px;
+.mt-month-label {
+  font-size: 9px;
   color: var(--text-muted);
-  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* GitHub-style heatmap */

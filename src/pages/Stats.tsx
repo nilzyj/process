@@ -142,28 +142,65 @@ function YearDist({ stats }: { stats: StatsType }) {
 }
 
 function MonthlyTimeline({ stats }: { stats: StatsType }) {
-  const monthly = useMemo(() => {
-    return stats.monthly_end
-      .sort((a, b) => a.month.localeCompare(b.month))
-      .slice(-60);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const months = useMemo(() => {
+    return stats.monthly_end.sort((a, b) => a.month.localeCompare(b.month));
   }, [stats.monthly_end]);
+  const years = useMemo(() => {
+    const map = new Map<string, { year: string; total: number; months: typeof months }>();
+    for (const m of months) {
+      const y = m.month.split('-')[0];
+      if (!map.has(y)) map.set(y, { year: y, total: 0, months: [] });
+      const entry = map.get(y)!;
+      entry.total += m.count;
+      entry.months.push(m);
+    }
+    return Array.from(map.values()).sort((a, b) => a.year.localeCompare(b.year));
+  }, [months]);
 
-  const maxCount = Math.max(...monthly.map((m) => m.count), 1);
+  if (!years.length) return null;
+  const maxYearTotal = Math.max(...years.map((y) => y.total), 1);
+  const colors = ['#22d3ee','#2dd4bf','#34d399','#4ade80','#a3e635','#facc15','#fb923c','#f87171','#c084fc','#818cf8'];
+
   return (
     <div className="stats-section">
       <h3>完结时间线</h3>
-      <div className="monthly-grid">
-        {monthly.map((m) => {
-          const pct = Math.round((m.count / maxCount) * 100);
-          const [y, mo] = m.month.split('-');
-          const shortYear = y.slice(2);
+      <div className="stats-bar-list">
+        {years.map((yr, i) => {
+          const isOpen = expanded === yr.year;
+          const pct = Math.round((yr.total / maxYearTotal) * 100);
+          const color = colors[i % colors.length];
+          const maxMonthCount = isOpen ? Math.max(...yr.months.map((m) => m.count), 1) : 0;
           return (
-            <div key={m.month} className="monthly-item">
-              <span className="monthly-val">{m.count}</span>
-              <div className="monthly-bar-wrap">
-                <div className="monthly-bar" style={{ height: `${Math.max(pct, 3)}%` }} />
+            <div key={yr.year}>
+              <div className="stats-bar-item clickable" onClick={() => setExpanded(isOpen ? null : yr.year)}>
+                <span className="label">
+                  <span className="yd-arrow">{isOpen ? '▼' : '▶'}</span>
+                  {yr.year}年
+                </span>
+                <div className="stats-bar-track">
+                  <div className="stats-bar-fill" style={{ width: `${pct}%`, background: color }}>
+                    {yr.total}
+                  </div>
+                </div>
               </div>
-              <span className="monthly-label">{shortYear}.{mo}</span>
+              {isOpen && (
+                <div className="mt-month-grid">
+                  {yr.months.map((m) => {
+                    const mpct = Math.round((m.count / maxMonthCount) * 100);
+                    const mo = m.month.split('-')[1];
+                    return (
+                      <div key={m.month} className="mt-month-item">
+                        <span className="mt-month-val">{m.count}</span>
+                        <div className="mt-month-bar-wrap">
+                          <div className="mt-month-bar" style={{ height: `${Math.max(mpct, 3)}%`, background: color }} />
+                        </div>
+                        <span className="mt-month-label">{mo}月</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
