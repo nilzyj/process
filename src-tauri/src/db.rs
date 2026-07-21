@@ -16,11 +16,13 @@ pub async fn connect(config: &DbConfig) -> Result<MySqlPool> {
         .database(&config.database);
 
     let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .acquire_timeout(std::time::Duration::from_secs(8))
+        .max_connections(10)
+        .acquire_timeout(std::time::Duration::from_secs(15))
+        .idle_timeout(std::time::Duration::from_secs(60))
+        .test_before_acquire(true)
         .connect_with(opts)
         .await
-        .map_err(|e| anyhow::anyhow!("数据库连接超时(8s): {}", e))?;
+        .map_err(|e| anyhow::anyhow!("数据库连接超时(15s): {}", e))?;
 
     Ok(pool)
 }
