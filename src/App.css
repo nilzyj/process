@@ -639,3 +639,202 @@ input, textarea, select {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+
+/* Stats layout */
+.stats-row {
+  display: flex;
+  gap: 24px;
+}
+
+.stats-section-half {
+  flex: 1;
+  min-width: 0;
+}
+
+.stats-card .count.today {
+  color: var(--accent);
+}
+
+/* Completion rates */
+.completion-fill {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  min-width: fit-content;
+}
+
+.cr-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #000;
+  white-space: nowrap;
+}
+
+/* Type × Status cross */
+.ts-cross-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ts-cross-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts-cross-item .label {
+  width: 60px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ts-cross-bar {
+  flex: 1;
+  height: 20px;
+  background: var(--bg-primary);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+}
+
+.ts-cross-seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.ts-cross-total {
+  width: 28px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Monthly timeline */
+.monthly-grid {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 160px;
+  padding: 8px 0;
+}
+
+.monthly-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.monthly-bar-wrap {
+  width: 100%;
+  height: 130px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.monthly-bar {
+  width: 70%;
+  max-width: 32px;
+  min-height: 2px;
+  background: linear-gradient(180deg, var(--accent), #ff6b6b);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.5s ease;
+}
+
+.monthly-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* GitHub-style heatmap */
+.heatmap {
+  padding: 16px 0;
+  overflow-x: auto;
+}
+
+.heatmap-months {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 32px;
+  margin-bottom: 2px;
+  height: 14px;
+}
+
+.hm-spacer {
+  width: 0;
+}
+
+.hm-month-label {
+  white-space: nowrap;
+}
+
+.heatmap-body {
+  display: flex;
+  gap: 4px;
+}
+
+.hm-day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.hm-day-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  height: 12px;
+  line-height: 12px;
+}
+
+.hm-grid {
+  display: flex;
+  gap: 2px;
+}
+
+.hm-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hm-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.hm-cell:hover {
+  opacity: 0.8;
+  outline: 1px solid var(--text-secondary);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  margin-left: 32px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.hm-legend-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}

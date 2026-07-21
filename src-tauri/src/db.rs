@@ -182,22 +182,130 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
             .fetch_all(pool)
             .await?;
 
+    let by_year: Vec<(i32, i64)> =
+        sqlx::query_as("SELECT year, COUNT(*) FROM `process` WHERE year IS NOT NULL GROUP BY year ORDER BY year")
+            .fetch_all(pool)
+            .await?;
+
+    let by_country: Vec<(String, i64)> =
+        sqlx::query_as("SELECT country, COUNT(*) FROM `process` WHERE country IS NOT NULL AND country != '' GROUP BY country ORDER BY COUNT(*) DESC")
+            .fetch_all(pool)
+            .await?;
+
+    let type_status: Vec<(String, String, i64)> =
+        sqlx::query_as("SELECT COALESCE(`type`,'未知') as t, COALESCE(status,'未知') as s, COUNT(*) as c FROM `process` GROUP BY `type`, status ORDER BY t, s")
+            .fetch_all(pool)
+            .await?;
+
+    let progress_rows: Vec<(Option<i32>, Option<i32>)> =
+        sqlx::query_as("SELECT current_episode, total_episode FROM `process` WHERE current_episode IS NOT NULL AND total_episode IS NOT NULL AND total_episode > 0")
+            .fetch_all(pool)
+            .await?;
+
+    let tags_rows: Vec<(Option<String>,)> =
+        sqlx::query_as("SELECT tags FROM `process` WHERE tags IS NOT NULL AND tags != ''")
+            .fetch_all(pool)
+            .await?;
+
+    let daily: Vec<(String, i64)> =
+        sqlx::query_as("SELECT DATE(modify_time) as day, COUNT(*) as c FROM `process` WHERE modify_time >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) GROUP BY DATE(modify_time) ORDER BY day")
+            .fetch_all(pool)
+            .await?;
+
+    let (new_today,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM `process` WHERE DATE(modify_time) = CURDATE()")
+            .fetch_one(pool)
+            .await?;
+    let (new_week,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM `process` WHERE modify_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")
+            .fetch_one(pool)
+            .await?;
+    let (new_month,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM `process` WHERE modify_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            .fetch_one(pool)
+            .await?;
+    let (completed_today,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM `process` WHERE status = '已完成' AND DATE(end_time) = CURDATE()")
+            .fetch_one(pool)
+            .await?;
+    let (completed_week,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM `process` WHERE status = '已完成' AND end_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")
+            .fetch_one(pool)
+            .await?;
+    let (completed_month,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM `process` WHERE status = '已完成' AND end_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")
+            .fetch_one(pool)
+            .await?;
+
+    // Process progress buckets
+    let mut buckets = vec![0i64; 5];
+    for (cur, total) in &progress_rows {
+        if let (Some(c), Some(t)) = (cur, total) {
+            if *t > 0 {
+                let pct = (*c as f64 / *t as f64) * 100.0;
+                if pct >= 100.0 { buckets[4] += 1; }
+                else if pct >= 75.0 { buckets[3] += 1; }
+                else if pct >= 50.0 { buckets[2] += 1; }
+                else if pct >= 25.0 { buckets[1] += 1; }
+                else { buckets[0] += 1; }
+            }
+        }
+    }
+
+    // Process tags
+    let mut tag_map: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+    for (t,) in &tags_rows {
+        if let Some(tags_str) = t {
+            for tag in tags_str.split(',') {
+                let trimmed = tag.trim().to_string();
+                if !trimmed.is_empty() {
+                    *tag_map.entry(trimmed).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+    let mut by_tags: Vec<TagCount> = tag_map
+        .into_iter()
+        .map(|(tag, count)| TagCount { tag, count })
+        .collect();
+    by_tags.sort_by(|a, b| b.count.cmp(&a.count));
+
+    // Compute completion rates per type
+    let mut rate_map: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
+    for (t, s, c) in &type_status {
+        let entry = rate_map.entry(t.clone()).or_insert((0, 0));
+        entry.1 += c;
+        if s == "已完成" {
+            entry.0 += c;
+        }
+    }
+    let mut completion_rates: Vec<CompletionRate> = rate_map
+        .into_iter()
+        .map(|(media_type, (completed, total))| CompletionRate { media_type, completed, total })
+        .collect();
+    completion_rates.sort_by(|a, b| b.total.cmp(&a.total));
+
     Ok(Stats {
         total: total.0,
-        by_type: by_type
-            .into_iter()
-            .map(|(t, c)| TypeCount {
-                media_type: t,
-                count: c,
-            })
-            .collect(),
-        by_status: by_status
-            .into_iter()
-            .map(|(s, c)| StatusCount {
-                status: s,
-                count: c,
-            })
-            .collect(),
+        by_type: by_type.into_iter().map(|(t, c)| TypeCount { media_type: t, count: c }).collect(),
+        by_status: by_status.into_iter().map(|(s, c)| StatusCount { status: s, count: c }).collect(),
+        by_year: by_year.into_iter().map(|(y, c)| YearCount { year: y, count: c }).collect(),
+        by_country: by_country.into_iter().map(|(c, n)| CountryCount { country: c, count: n }).collect(),
+        by_tags,
+        progress_buckets: vec![
+            ProgressBucket { label: "0-25%".into(), count: buckets[0] },
+            ProgressBucket { label: "25-50%".into(), count: buckets[1] },
+            ProgressBucket { label: "50-75%".into(), count: buckets[2] },
+            ProgressBucket { label: "75-99%".into(), count: buckets[3] },
+            ProgressBucket { label: "100%".into(), count: buckets[4] },
+        ],
+        type_status: type_status.into_iter().map(|(t, s, c)| TypeStatusCount { media_type: t, status: s, count: c }).collect(),
+        completion_rates,
+        daily_activity: daily.into_iter().map(|(d, c)| DailyActivity { date: d, count: c }).collect(),
+        recent: RecentActivity {
+            new_today, new_week, new_month,
+            completed_today, completed_week, completed_month,
+        },
     })
 }
 

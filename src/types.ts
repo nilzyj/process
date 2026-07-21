@@ -49,6 +49,17 @@ export interface Stats {
   total: number;
   by_type: { media_type: string; count: number }[];
   by_status: { status: string; count: number }[];
+  by_year: { year: number; count: number }[];
+  by_country: { country: string; count: number }[];
+  by_tags: { tag: string; count: number }[];
+  progress_buckets: { label: string; count: number }[];
+  type_status: { media_type: string; status: string; count: number }[];
+  completion_rates: { media_type: string; completed: number; total: number }[];
+  daily_activity: { date: string; count: number }[];
+  recent: {
+    new_today: number; new_week: number; new_month: number;
+    completed_today: number; completed_week: number; completed_month: number;
+  };
 }
 
 export interface DbConfig {
