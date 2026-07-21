@@ -70,7 +70,7 @@ function SummaryCards({ stats }: { stats: StatsType }) {
 
 function YearDist({ stats }: { stats: StatsType }) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const years = stats.by_year.sort((a, b) => a.year - b.year);
+  const years = [...stats.by_year].sort((a, b) => b.count - a.count);
   if (!years.length) return null;
   const maxCount = Math.max(...years.map((y) => y.count), 1);
   const colors = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1','#14b8a6','#f43f5e'];
