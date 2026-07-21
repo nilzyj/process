@@ -757,8 +757,7 @@ input, textarea, select {
 /* GitHub-style heatmap */
 .heatmap {
   padding: 8px 0;
-  overflow-x: auto;
-  width: fit-content;
+  display: inline-block;
 }
 
 .heatmap-months {
