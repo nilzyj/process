@@ -235,7 +235,7 @@ function TagDist({ stats }: { stats: StatsType }) {
   const [popover, setPopover] = useState<{ tag: string; color: string; left: number; top: number } | null>(null);
   const [records, setRecords] = useState<MediaRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const refMap = useMemo(() => new Map<string, HTMLDivElement>(), []);
+  const refMap = useMemo(() => new Map<string, HTMLElement>(), []);
 
   useEffect(() => {
     if (!popover) return;
@@ -250,55 +250,43 @@ function TagDist({ stats }: { stats: StatsType }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [popover]);
 
-  const groups = useMemo(() => {
-    const map = new Map<string, typeof stats.by_tags>();
-    for (const t of stats.by_tags) {
-      const key = t.tag.charAt(0);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(t);
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, 'zh-CN'));
-  }, [stats.by_tags]);
-
   if (!stats.by_tags.length) return null;
+  const maxCount = Math.max(...stats.by_tags.map((t) => t.count), 1);
+  const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5','#FF2E63','#6C5B7B','#f97316','#a855f7','#22c55e'];
   return (
     <div className="stats-section">
       <h3>标签分布</h3>
-      <div className="tag-groups">
-        {groups.map(([char, tags]) => (
-          <div key={char} className="tag-group">
-            <div className="tag-group-char">{char}</div>
-            <div className="pill-grid">
-              {tags.map((t, i) => {
-                const color = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5','#FF2E63','#6C5B7B'][i % 10];
-                return (
-                  <div
-                    key={t.tag}
-                    ref={(el) => { if (el) refMap.set(t.tag, el); }}
-                    className="pill clickable"
-                    style={{ borderColor: `${color}44`, background: `${color}14` }}
-                    onClick={async () => {
-                      if (popover?.tag === t.tag) { setPopover(null); setRecords([]); return; }
-                      const rect = refMap.get(t.tag)?.getBoundingClientRect();
-                      if (!rect) return;
-                      setPopover({ tag: t.tag, color, left: rect.left, top: rect.bottom + 4 });
-                      setLoading(true);
-                      try {
-                        const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
-                          filter: { tag: t.tag, page: 1, page_size: 200 },
-                        });
-                        setRecords(res.records);
-                      } catch { setRecords([]); } finally { setLoading(false); }
-                    }}
-                  >
-                    <span className="pill-name" style={{ color }}>{t.tag}</span>
-                    <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <div className="cloud-grid">
+        {stats.by_tags.map((t, i) => {
+          const ratio = t.count / maxCount;
+          const size = Math.round(13 + ratio * 21);
+          const weight = ratio > 0.5 ? 800 : ratio > 0.25 ? 700 : 600;
+          const color = palette[i % palette.length];
+          return (
+            <span
+              key={t.tag}
+              ref={(el) => { if (el) refMap.set(t.tag, el); }}
+              className="cloud-tag clickable"
+              style={{ fontSize: size, fontWeight: weight, color }}
+              onClick={async () => {
+                if (popover?.tag === t.tag) { setPopover(null); setRecords([]); return; }
+                const rect = refMap.get(t.tag)?.getBoundingClientRect();
+                if (!rect) return;
+                setPopover({ tag: t.tag, color, left: rect.left, top: rect.bottom + 4 });
+                setLoading(true);
+                try {
+                  const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
+                    filter: { tag: t.tag, page: 1, page_size: 200 },
+                  });
+                  setRecords(res.records);
+                } catch { setRecords([]); } finally { setLoading(false); }
+              }}
+            >
+              {t.tag}
+              <sup className="cloud-count">{t.count}</sup>
+            </span>
+          );
+        })}
       </div>
       {popover && (
         <div
