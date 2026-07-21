@@ -69,25 +69,64 @@ function SummaryCards({ stats }: { stats: StatsType }) {
 
 
 function YearDist({ stats }: { stats: StatsType }) {
-  const years = [...stats.by_year].sort((a, b) => b.count - a.count);
-  if (!years.length) return null;
-  const maxCount = Math.max(...years.map((y) => y.count), 1);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const { decades, allYears } = useMemo(() => {
+    const sorted = [...stats.by_year].sort((a, b) => b.year - a.year);
+    const map = new Map<number, { decade: number; total: number; years: typeof sorted }>();
+    for (const y of sorted) {
+      const d = Math.floor(y.year / 10) * 10;
+      if (!map.has(d)) map.set(d, { decade: d, total: 0, years: [] });
+      const entry = map.get(d)!;
+      entry.total += y.count;
+      entry.years.push(y);
+    }
+    return {
+      decades: Array.from(map.values()).sort((a, b) => b.decade - a.decade),
+      allYears: sorted,
+    };
+  }, [stats.by_year]);
+
+  if (!allYears.length) return null;
+  const maxTotal = Math.max(...decades.map((d) => d.total), 1);
   const colors = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1','#14b8a6','#f43f5e'];
   return (
     <div className="stats-section">
       <h3>发行年份</h3>
       <div className="stats-bar-list">
-        {years.map((yr, i) => {
-          const pct = Math.round((yr.count / maxCount) * 100);
+        {decades.map((d, i) => {
+          const isOpen = expanded === String(d.decade);
+          const pct = Math.round((d.total / maxTotal) * 100);
           const color = colors[i % colors.length];
           return (
-            <div key={yr.year} className="stats-bar-item">
-              <span className="label">{yr.year}年</span>
-              <div className="stats-bar-track">
-                <div className="stats-bar-fill" style={{ width: `${pct}%`, background: color }}>
-                  {yr.count}
+            <div key={d.decade}>
+              <div className="stats-bar-item clickable" onClick={() => setExpanded(isOpen ? null : String(d.decade))}>
+                <span className="label">
+                  <span className="yd-arrow">{isOpen ? '▼' : '▶'}</span>
+                  {d.decade}年代
+                </span>
+                <div className="stats-bar-track">
+                  <div className="stats-bar-fill" style={{ width: `${pct}%`, background: color }}>
+                    {d.total}
+                  </div>
                 </div>
               </div>
+              {isOpen && (
+                <div className="yd-children">
+                  {d.years.map((yr) => {
+                    const childPct = Math.round((yr.count / d.total) * 100);
+                    return (
+                      <div key={yr.year} className="stats-bar-item yd-child">
+                        <span className="label">{yr.year}年</span>
+                        <div className="stats-bar-track">
+                          <div className="stats-bar-fill" style={{ width: `${childPct}%`, background: color, opacity: 0.7 }}>
+                            {yr.count}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
