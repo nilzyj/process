@@ -69,24 +69,18 @@ function SummaryCards({ stats }: { stats: StatsType }) {
 
 
 function YearDist({ stats }: { stats: StatsType }) {
-  const colors = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1','#14b8a6','#f43f5e'];
+  const palette = ['#f97316','#a855f7','#06b6d4','#22c55e','#ef4444','#eab308','#ec4899','#6366f1','#14b8a6','#f43f5e'];
   if (!stats.by_year.length) return null;
-  const maxCount = Math.max(...stats.by_year.map((y) => y.count), 1);
   return (
     <div className="stats-section">
       <h3>发行年份</h3>
-      <div className="stats-bar-list">
+      <div className="country-grid">
         {stats.by_year.map((y, i) => {
-          const pct = Math.round((y.count / maxCount) * 100);
-          const color = colors[i % colors.length];
+          const color = palette[i % palette.length];
           return (
-            <div key={y.year} className="stats-bar-item">
-              <span className="label">{y.year}年</span>
-              <div className="stats-bar-track">
-                <div className="stats-bar-fill" style={{ width: `${pct}%`, background: color }}>
-                  {y.count}
-                </div>
-              </div>
+            <div key={y.year} className="country-card" style={{ borderColor: `${color}33`, background: `${color}0a` }}>
+              <span className="cc-name" style={{ color }}>{y.year}年</span>
+              <span className="cc-count" style={{ color: `${color}bb` }}>{y.count}</span>
             </div>
           );
         })}
