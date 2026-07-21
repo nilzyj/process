@@ -250,39 +250,55 @@ function TagDist({ stats }: { stats: StatsType }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [popover]);
 
+  const groups = useMemo(() => {
+    const map = new Map<string, typeof stats.by_tags>();
+    for (const t of stats.by_tags) {
+      const key = t.tag.charAt(0);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(t);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, 'zh-CN'));
+  }, [stats.by_tags]);
+
   if (!stats.by_tags.length) return null;
-  const palette = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5','#FF2E63','#6C5B7B'];
   return (
     <div className="stats-section">
       <h3>标签分布</h3>
-      <div className="pill-grid">
-        {stats.by_tags.map((t, i) => {
-          const color = palette[i % palette.length];
-          return (
-            <div
-              key={t.tag}
-              ref={(el) => { if (el) refMap.set(t.tag, el); }}
-              className="pill clickable"
-              style={{ borderColor: `${color}44`, background: `${color}14` }}
-              onClick={async () => {
-                if (popover?.tag === t.tag) { setPopover(null); setRecords([]); return; }
-                const rect = refMap.get(t.tag)?.getBoundingClientRect();
-                if (!rect) return;
-                setPopover({ tag: t.tag, color, left: rect.left, top: rect.bottom + 4 });
-                setLoading(true);
-                try {
-                  const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
-                    filter: { tag: t.tag, page: 1, page_size: 200 },
-                  });
-                  setRecords(res.records);
-                } catch { setRecords([]); } finally { setLoading(false); }
-              }}
-            >
-              <span className="pill-name" style={{ color }}>{t.tag}</span>
-              <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
+      <div className="tag-groups">
+        {groups.map(([char, tags]) => (
+          <div key={char} className="tag-group">
+            <div className="tag-group-char">{char}</div>
+            <div className="pill-grid">
+              {tags.map((t, i) => {
+                const color = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD93D','#DDA0DD','#F08A5D','#00ADB5','#FF2E63','#6C5B7B'][i % 10];
+                return (
+                  <div
+                    key={t.tag}
+                    ref={(el) => { if (el) refMap.set(t.tag, el); }}
+                    className="pill clickable"
+                    style={{ borderColor: `${color}44`, background: `${color}14` }}
+                    onClick={async () => {
+                      if (popover?.tag === t.tag) { setPopover(null); setRecords([]); return; }
+                      const rect = refMap.get(t.tag)?.getBoundingClientRect();
+                      if (!rect) return;
+                      setPopover({ tag: t.tag, color, left: rect.left, top: rect.bottom + 4 });
+                      setLoading(true);
+                      try {
+                        const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
+                          filter: { tag: t.tag, page: 1, page_size: 200 },
+                        });
+                        setRecords(res.records);
+                      } catch { setRecords([]); } finally { setLoading(false); }
+                    }}
+                  >
+                    <span className="pill-name" style={{ color }}>{t.tag}</span>
+                    <span className="pill-count" style={{ background: `${color}22`, color: `${color}cc` }}>{t.count}</span>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
       {popover && (
         <div
