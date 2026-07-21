@@ -69,7 +69,6 @@ function SummaryCards({ stats }: { stats: StatsType }) {
 
 
 function YearDist({ stats }: { stats: StatsType }) {
-  const [expanded, setExpanded] = useState<string | null>(null);
   const years = [...stats.by_year].sort((a, b) => b.count - a.count);
   if (!years.length) return null;
   const maxCount = Math.max(...years.map((y) => y.count), 1);
@@ -79,32 +78,16 @@ function YearDist({ stats }: { stats: StatsType }) {
       <h3>发行年份</h3>
       <div className="stats-bar-list">
         {years.map((yr, i) => {
-          const isOpen = expanded === String(yr.year);
           const pct = Math.round((yr.count / maxCount) * 100);
           const color = colors[i % colors.length];
           return (
-            <div key={yr.year}>
-              <div className="stats-bar-item clickable" onClick={() => setExpanded(isOpen ? null : String(yr.year))}>
-                <span className="label">
-                  <span className="yd-arrow">{isOpen ? '▼' : '▶'}</span>
-                  {yr.year}年
-                </span>
-                <div className="stats-bar-track">
-                  <div className="stats-bar-fill" style={{ width: `${pct}%`, background: color }}>
-                    {yr.count}
-                  </div>
+            <div key={yr.year} className="stats-bar-item">
+              <span className="label">{yr.year}年</span>
+              <div className="stats-bar-track">
+                <div className="stats-bar-fill" style={{ width: `${pct}%`, background: color }}>
+                  {yr.count}
                 </div>
               </div>
-              {isOpen && (
-                <div className="mt-month-grid">
-                  {Array.from({ length: 12 }, (_, idx) => (
-                    <div key={`${yr.year}-${idx}`} className="mt-cell" style={{ background: `${color}15` }}>
-                      <span className="mt-cell-month">{idx + 1}月</span>
-                      <span className="mt-cell-count" style={{ color: `${color}bb` }}>-</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           );
         })}
