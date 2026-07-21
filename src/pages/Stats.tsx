@@ -195,8 +195,9 @@ function MonthlyTimeline({ data }: { data: { date: string; count: number }[] }) 
           const [, mo] = m.month.split('-');
           return (
             <div key={m.month} className="monthly-item">
+              <span className="monthly-val">{m.count}</span>
               <div className="monthly-bar-wrap">
-                <div className="monthly-bar" style={{ height: `${pct}%` }} />
+                <div className="monthly-bar" style={{ height: `${Math.max(pct, 3)}%` }} />
               </div>
               <span className="monthly-label">{mo}月</span>
             </div>
