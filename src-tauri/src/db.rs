@@ -183,7 +183,7 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
             .await?;
 
     let by_year: Vec<(i32, i64)> =
-        sqlx::query_as("SELECT year, COUNT(*) FROM `process` WHERE year IS NOT NULL GROUP BY year ORDER BY year")
+        sqlx::query_as("SELECT CAST(year AS SIGNED) as y, COUNT(*) FROM `process` WHERE year IS NOT NULL GROUP BY y ORDER BY y")
             .fetch_all(pool)
             .await?;
 
@@ -208,7 +208,7 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
             .await?;
 
     let daily: Vec<(String, i64)> =
-        sqlx::query_as("SELECT DATE(modify_time) as day, COUNT(*) as c FROM `process` WHERE modify_time >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) GROUP BY DATE(modify_time) ORDER BY day")
+        sqlx::query_as("SELECT DATE_FORMAT(modify_time, '%Y-%m-%d') as day, COUNT(*) as c FROM `process` WHERE modify_time >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) GROUP BY DATE_FORMAT(modify_time, '%Y-%m-%d') ORDER BY day")
             .fetch_all(pool)
             .await?;
 

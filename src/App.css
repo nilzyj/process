@@ -640,6 +640,13 @@ input, textarea, select {
   flex-shrink: 0;
 }
 
+.stats-error {
+  color: var(--danger);
+  font-size: 14px;
+  text-align: center;
+  padding: 40px;
+}
+
 /* Stats layout */
 .stats-row {
   display: flex;

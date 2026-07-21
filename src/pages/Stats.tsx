@@ -7,6 +7,7 @@ import ActivityHeatmap from '../components/ActivityHeatmap';
 export default function Stats() {
   const [stats, setStats] = useState<StatsType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetch = async () => {
@@ -14,6 +15,7 @@ export default function Stats() {
         const data = await invoke<StatsType>('get_stats');
         setStats(data);
       } catch (e) {
+        setError(String(e));
         console.error(e);
       } finally {
         setLoading(false);
@@ -23,7 +25,8 @@ export default function Stats() {
   }, []);
 
   if (loading) return <div className="stats-page"><div className="loading-spinner" /></div>;
-  if (!stats) return <div className="stats-page"><p>无法获取统计</p></div>;
+  if (error) return <div className="stats-page"><p className="stats-error">{error}</p></div>;
+  if (!stats) return <div className="stats-page"><p className="stats-error">无法获取统计</p></div>;
 
   return (
     <div className="stats-page">
