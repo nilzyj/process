@@ -166,7 +166,7 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
         return { month: mk, count };
       });
       return { year, total, months };
-    });
+    }).filter((y) => y.total > 0);
   }, [stats]);
   if (!years.length) return null;
   const maxYearTotal = Math.max(...years.map((y) => y.total), 1);
