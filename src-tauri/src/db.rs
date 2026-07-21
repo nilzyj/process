@@ -213,6 +213,11 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
             .fetch_all(pool)
             .await?;
 
+    let monthly_end: Vec<(String, i64)> =
+        sqlx::query_as("SELECT DATE_FORMAT(end_time, '%Y-%m') as month, COUNT(*) as c FROM `process` WHERE end_time IS NOT NULL GROUP BY DATE_FORMAT(end_time, '%Y-%m') ORDER BY month")
+            .fetch_all(pool)
+            .await?;
+
     let (new_today,): (i64,) =
         sqlx::query_as("SELECT COUNT(*) FROM `process` WHERE DATE(modify_time) = CURDATE()")
             .fetch_one(pool)
@@ -303,6 +308,7 @@ pub async fn get_stats(pool: &MySqlPool) -> Result<Stats> {
         type_status: type_status.into_iter().map(|(t, s, c)| TypeStatusCount { media_type: t, status: s, count: c }).collect(),
         completion_rates,
         daily_activity: daily.into_iter().map(|(d, c)| DailyActivity { date: d, count: c }).collect(),
+        monthly_end: monthly_end.into_iter().map(|(m, c)| MonthCount { month: m, count: c }).collect(),
         recent: RecentActivity {
             new_today, new_week, new_month,
             completed_today, completed_week, completed_month,

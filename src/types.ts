@@ -56,6 +56,7 @@ export interface Stats {
   type_status: { media_type: string; status: string; count: number }[];
   completion_rates: { media_type: string; completed: number; total: number }[];
   daily_activity: { date: string; count: number }[];
+  monthly_end: { month: string; count: number }[];
   recent: {
     new_today: number; new_week: number; new_month: number;
     completed_today: number; completed_week: number; completed_month: number;

@@ -60,6 +60,7 @@ pub struct Stats {
     pub type_status: Vec<TypeStatusCount>,
     pub completion_rates: Vec<CompletionRate>,
     pub daily_activity: Vec<DailyActivity>,
+    pub monthly_end: Vec<MonthCount>,
     pub recent: RecentActivity,
 }
 
@@ -116,6 +117,12 @@ pub struct CompletionRate {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DailyActivity {
     pub date: String,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MonthCount {
+    pub month: String,
     pub count: i64,
 }
 

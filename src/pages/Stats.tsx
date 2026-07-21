@@ -34,7 +34,7 @@ export default function Stats() {
       <CompletionRates stats={stats} />
       <TypeStatusCross stats={stats} />
       <YearDist stats={stats} />
-      <MonthlyTimeline data={stats.daily_activity} />
+      <MonthlyTimeline stats={stats} />
       <CountryDist stats={stats} />
       <TagDist stats={stats} />
       <ProgressBuckets stats={stats} />
@@ -219,23 +219,17 @@ function YearDist({ stats }: { stats: StatsType }) {
   );
 }
 
-function MonthlyTimeline({ data }: { data: { date: string; count: number }[] }) {
+function MonthlyTimeline({ stats }: { stats: StatsType }) {
   const monthly = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const d of data) {
-      const m = d.date.slice(0, 7);
-      map.set(m, (map.get(m) || 0) + d.count);
-    }
-    return Array.from(map.entries())
-      .map(([month, count]) => ({ month, count }))
+    return stats.monthly_end
       .sort((a, b) => a.month.localeCompare(b.month))
       .slice(-60);
-  }, [data]);
+  }, [stats.monthly_end]);
 
   const maxCount = Math.max(...monthly.map((m) => m.count), 1);
   return (
     <div className="stats-section">
-      <h3>时间线（月度）</h3>
+      <h3>完结时间线</h3>
       <div className="monthly-grid">
         {monthly.map((m) => {
           const pct = Math.round((m.count / maxCount) * 100);
