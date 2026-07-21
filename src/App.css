@@ -721,6 +721,11 @@ input, textarea, select {
   padding: 8px 4px;
   border-radius: 8px;
   min-height: 44px;
+  cursor: default;
+}
+
+.mt-cell.clickable {
+  cursor: pointer;
 }
 
 .mt-cell-month {
@@ -732,6 +737,15 @@ input, textarea, select {
 .mt-cell-count {
   font-size: 16px;
   font-weight: 800;
+}
+
+.mt-month-records {
+  margin: 4px 16px 8px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 /* GitHub-style heatmap */

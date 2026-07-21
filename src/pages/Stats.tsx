@@ -143,6 +143,9 @@ function YearDist({ stats }: { stats: StatsType }) {
 
 function MonthlyTimeline({ stats }: { stats: StatsType }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
+  const [monthRecords, setMonthRecords] = useState<MediaRecord[]>([]);
+  const [monthLoading, setMonthLoading] = useState(false);
   const years = useMemo(() => {
     // Gather years from both monthly_end and by_year
     const yearSet = new Set<string>();
@@ -193,15 +196,56 @@ function MonthlyTimeline({ stats }: { stats: StatsType }) {
                   </div>
                 </div>
               </div>
-              {isOpen && (
+              {isOpen && (<>
                 <div className="mt-month-grid">
-                  {yr.months.map((m, idx) => (
-                    <div key={m.month} className="mt-cell" style={{ background: `${color}15` }}>
-                      <span className="mt-cell-month">{idx + 1}月</span>
-                      <span className="mt-cell-count" style={{ color: m.count > 0 ? color : 'var(--text-muted)' }}>{m.count}</span>
-                    </div>
-                  ))}
+                  {yr.months.map((m, idx) => {
+                    const isMonthOpen = expandedMonth === m.month;
+                    return (
+                      <div
+                        key={m.month}
+                        className={`mt-cell${m.count > 0 ? ' clickable' : ''}`}
+                        style={{ background: `${color}15` }}
+                        onClick={async () => {
+                          if (isMonthOpen) { setExpandedMonth(null); setMonthRecords([]); return; }
+                          if (m.count === 0) return;
+                          setExpandedMonth(m.month);
+                          setMonthLoading(true);
+                          try {
+                            const y = parseInt(yr.year);
+                            const nextMonth = idx === 11 ? `${y + 1}-01` : `${yr.year}-${String(idx + 2).padStart(2, '0')}`;
+                            const res = await invoke<{ records: MediaRecord[]; total: number }>('list_records', {
+                              filter: { end_time_start: m.month, end_time_end: nextMonth, page: 1, page_size: 200 },
+                            });
+                            setMonthRecords(res.records);
+                          } catch { setMonthRecords([]); } finally { setMonthLoading(false); }
+                        }}
+                      >
+                        <span className="mt-cell-month">{idx + 1}月</span>
+                        <span className="mt-cell-count" style={{ color: m.count > 0 ? color : 'var(--text-muted)' }}>{m.count}</span>
+                      </div>
+                    );
+                  })}
                 </div>
+                {expandedMonth && expandedMonth.startsWith(yr.year) && (
+                  <div className="mt-month-records">
+                    {monthLoading ? (
+                      <span className="series-loading">加载中...</span>
+                    ) : monthRecords.length === 0 ? (
+                      <span className="series-loading">暂无记录</span>
+                    ) : (
+                      monthRecords.map((r) => (
+                        <div key={r.id} className="series-record-item" style={{ borderLeftColor: color }}>
+                          <span className="sr-name">{r.record_name}</span>
+                          <span className="sr-meta">
+                            {r.media_type && <span className="sr-type">{r.media_type}</span>}
+                            {r.status && <span className="sr-status">{r.status}</span>}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </>
               )}
             </div>
           );

@@ -38,6 +38,8 @@ pub fn run() {
                             media_type: None,
                             status: Some("进行中".to_string()),
                             tag: None,
+                            end_time_start: None,
+                            end_time_end: None,
                             page: Some(1),
                             page_size: Some(200),
                         };

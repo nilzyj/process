@@ -151,6 +151,8 @@ pub struct RecordFilter {
     pub media_type: Option<String>,
     pub status: Option<String>,
     pub tag: Option<String>,
+    pub end_time_start: Option<String>,
+    pub end_time_end: Option<String>,
     pub page: Option<i64>,
     pub page_size: Option<i64>,
 }
