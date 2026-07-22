@@ -123,11 +123,7 @@ pub async fn get_record(pool: &MySqlPool, id: i64) -> Result<Option<Record>> {
 }
 
 pub async fn add_record(pool: &MySqlPool, record: NewRecord) -> Result<i64> {
-    let end_time = if record.status.as_deref() == Some("已完成") {
-        Some(chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string())
-    } else {
-        record.end_time
-    };
+    let end_time = record.end_time;
 
     let result = sqlx::query(
         r#"INSERT INTO `process` 
@@ -152,9 +148,8 @@ pub async fn add_record(pool: &MySqlPool, record: NewRecord) -> Result<i64> {
 }
 
 pub async fn update_record(pool: &MySqlPool, record: UpdateRecord) -> Result<bool> {
-    let end_time = match (&record.end_time, record.status.as_deref()) {
-        (Some(t), _) if !t.is_empty() => Some(t.clone()),
-        (_, Some("已完成")) => Some(chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()),
+    let end_time = match &record.end_time {
+        Some(t) if !t.is_empty() => Some(t.clone()),
         _ => None,
     };
 
