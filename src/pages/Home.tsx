@@ -6,11 +6,7 @@ import RecordRow from '../components/RecordRow';
 
 const RecordForm = lazy(() => import('../components/RecordForm'));
 
-interface Props {
-  connected: boolean;
-}
-
-export default function Home({ connected }: Props) {
+export default function Home() {
   const [records, setRecords] = useState<MediaRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -22,7 +18,6 @@ export default function Home({ connected }: Props) {
   const [showForm, setShowForm] = useState(false);
 
   const fetchRecords = useCallback(async (silent?: boolean) => {
-    if (!connected) return;
     if (!silent) {
       // Try pre-fetched cache first on initial load
       try {
@@ -60,7 +55,7 @@ export default function Home({ connected }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [search, mediaType, status, connected]);
+  }, [search, mediaType, status]);
 
   useEffect(() => {
     fetchRecords();
@@ -141,8 +136,8 @@ export default function Home({ connected }: Props) {
       />
 
       <div className="list-info">
-        <span>{connected ? `共 ${total} 条记录` : ''}</span>
-        <button className="btn btn-primary btn-sm" onClick={handleAdd} disabled={!connected}>+ 新增</button>
+        <span>共 {total} 条记录</span>
+        <button className="btn btn-primary btn-sm" onClick={handleAdd}>+ 新增</button>
       </div>
 
       <div className="record-list">
@@ -158,12 +153,7 @@ export default function Home({ connected }: Props) {
           <span></span>
         </div>
 
-        {!connected ? (
-          <div className="empty-state">
-            <div className="loading-spinner" />
-            <p>正在连接数据库...</p>
-          </div>
-        ) : loading ? (
+        {loading ? (
           <div className="empty-state">
             <div className="loading-spinner" />
             <p>加载中...</p>

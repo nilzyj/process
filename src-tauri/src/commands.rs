@@ -1,57 +1,153 @@
 use std::sync::{Arc, Mutex, RwLock};
-use sqlx::MySqlPool;
 use tauri::State;
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
-use crate::config::{self, DbConfig, LibraryConfig};
+use sqlx::SqlitePool;
+
+use crate::config::{self, AppConfig, LibraryConfig};
 use crate::db;
 use crate::models::*;
+use crate::snapshot::{self, SnapshotInfo};
 use crate::{player, scan};
 
 pub struct AppState {
-    pub pool: Arc<Mutex<Option<MySqlPool>>>,
+    pub pool: Arc<Mutex<Option<SqlitePool>>>,
     pub cached_records: Arc<Mutex<Option<PaginatedResult>>>,
     /// 当前已扫描到的视频文件，play_video / reveal_in_explorer 以此为白名单
     pub videos: Arc<RwLock<Vec<VideoFile>>>,
 }
 
+#[derive(serde::Serialize)]
+pub struct StorageInfo {
+    pub database_path: String,
+    pub snapshot_dir: Option<String>,
+    pub record_count: i64,
+}
+
+// ---------- 存储 ----------
+
+fn get_pool(state: &AppState) -> Result<SqlitePool, String> {
+    state
+        .pool
+        .lock()
+        .map_err(|_| "数据库句柄锁已中毒".to_string())?
+        .clone()
+        .ok_or_else(|| "本地数据库尚未初始化".into())
+}
+
+/// 打开本地 SQLite。文件不存在会自动创建，schema 幂等补齐。
+/// 本地存储不存在「连接失败」，失败只可能是磁盘/权限问题。
 #[tauri::command]
-pub async fn test_connection(config: DbConfig) -> Result<String, String> {
-    match db::connect(&config).await {
-        Ok(_) => Ok("连接成功".into()),
-        Err(e) => Err(format!("连接失败: {}", e)),
+pub async fn init_storage(state: State<'_, AppState>) -> Result<StorageInfo, String> {
+    // 预热任务可能已完成
+    if state.pool.lock().map_err(|e| e.to_string())?.is_some() {
+        return storage_info(&state).await;
+    }
+
+    let cfg = config::load_app_config();
+    match db::connect(&cfg).await {
+        Ok(pool) => {
+            let count = db::count_records(&pool).await.unwrap_or(0);
+            *state.pool.lock().map_err(|e| e.to_string())? = Some(pool);
+            Ok(StorageInfo {
+                database_path: cfg.database_path().to_string_lossy().into_owned(),
+                snapshot_dir: cfg.snapshot_dir.as_ref().map(|p| p.to_string_lossy().into_owned()),
+                record_count: count,
+            })
+        }
+        Err(e) => Err(format!("打开本地数据库失败: {}", e)),
     }
 }
 
-#[tauri::command]
-pub async fn get_config() -> Result<Option<DbConfig>, String> {
-    Ok(config::load_config())
+async fn storage_info(state: &AppState) -> Result<StorageInfo, String> {
+    let cfg = config::load_app_config();
+    let count = match get_pool(state) {
+        Ok(p) => db::count_records(&p).await.unwrap_or(0),
+        Err(_) => 0,
+    };
+    Ok(StorageInfo {
+        database_path: cfg.database_path().to_string_lossy().into_owned(),
+        snapshot_dir: cfg.snapshot_dir.as_ref().map(|p| p.to_string_lossy().into_owned()),
+        record_count: count,
+    })
 }
 
 #[tauri::command]
-pub async fn save_config(config_data: DbConfig) -> Result<String, String> {
-    config::save_config(&config_data).map_err(|e| format!("保存配置失败: {}", e))?;
+pub async fn get_storage_info(state: State<'_, AppState>) -> Result<StorageInfo, String> {
+    storage_info(&state).await
+}
+
+#[tauri::command]
+pub async fn get_app_config() -> Result<AppConfig, String> {
+    Ok(config::load_app_config())
+}
+
+#[tauri::command]
+pub async fn save_app_config(cfg: AppConfig) -> Result<String, String> {
+    config::save_app_config(&cfg).map_err(|e| format!("保存失败: {}", e))?;
     Ok("配置已保存".into())
 }
 
+/// 检测磁盘上是否还残留旧版含明文 MySQL 密码的 config.json。
+/// 切换到本地 SQLite 后该文件不再被读取，但凭据仍留在磁盘上，需提示用户清理。
 #[tauri::command]
-pub async fn init_db(state: State<'_, AppState>, config: DbConfig) -> Result<String, String> {
-    // Background task may have already connected
-    if state.pool.lock().map_err(|e| e.to_string())?.is_some() {
-        config::save_config(&config).ok();
-        return Ok("数据库连接成功".into());
-    }
-    match db::connect(&config).await {
-        Ok(pool) => {
-            *state.pool.lock().map_err(|e| e.to_string())? = Some(pool);
-            config::save_config(&config).ok();
-            Ok("数据库连接成功".into())
-        }
-        Err(e) => Err(format!("连接失败: {}", e)),
-    }
+pub async fn legacy_credentials_present() -> Result<bool, String> {
+    Ok(config::legacy_mysql_config_present())
 }
+
+// ---------- 快照 ----------
+
+#[tauri::command]
+pub async fn export_snapshot(state: State<'_, AppState>) -> Result<String, String> {
+    let pool = get_pool(&state)?;
+    let cfg = config::load_app_config();
+    snapshot::export(&pool, &cfg)
+        .await
+        .map_err(|e| format!("导出失败: {}", e))
+}
+
+#[tauri::command]
+pub async fn list_snapshots() -> Result<Vec<SnapshotInfo>, String> {
+    let cfg = config::load_app_config();
+    let Some(dir) = cfg.snapshot_dir else {
+        return Ok(Vec::new());
+    };
+    Ok(snapshot::list_snapshots(&dir))
+}
+
+#[tauri::command]
+pub async fn restore_snapshot(state: State<'_, AppState>, path: String) -> Result<usize, String> {
+    let pool = get_pool(&state)?;
+    // 恢复前先给当前数据留一份，避免误操作丢失
+    let cfg = config::load_app_config();
+    if db::count_records(&pool).await.unwrap_or(0) > 0 {
+        let _ = snapshot::export(&pool, &cfg).await;
+    }
+    snapshot::restore(&pool, &path)
+        .await
+        .map_err(|e| format!("恢复失败: {}", e))
+}
+
+/// 从 JSON 文件导入记录。用于 MySQL 迁移与手工恢复。
+#[tauri::command]
+pub async fn import_records(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<usize, String> {
+    let pool = get_pool(&state)?;
+    let cfg = config::load_app_config();
+    let count = db::count_records(&pool).await.unwrap_or(0);
+    if count > 0 {
+        let _ = snapshot::export(&pool, &cfg).await;
+    }
+    snapshot::import_records_file(&pool, &path)
+        .await
+        .map_err(|e| format!("导入失败: {}", e))
+}
+
+// ---------- 记录 ----------
 
 #[tauri::command]
 pub async fn get_cached_records(state: State<'_, AppState>) -> Result<Option<PaginatedResult>, String> {
@@ -60,15 +156,6 @@ pub async fn get_cached_records(state: State<'_, AppState>) -> Result<Option<Pag
         .lock()
         .map_err(|e| e.to_string())?
         .clone())
-}
-
-fn get_pool(state: &AppState) -> Result<MySqlPool, String> {
-    state
-        .pool
-        .lock()
-        .map_err(|e| e.to_string())?
-        .clone()
-        .ok_or_else(|| "数据库未连接".into())
 }
 
 #[tauri::command]
@@ -91,10 +178,7 @@ pub async fn get_record(state: State<'_, AppState>, id: i64) -> Result<Option<Re
 }
 
 #[tauri::command]
-pub async fn add_record(
-    state: State<'_, AppState>,
-    record: NewRecord,
-) -> Result<i64, String> {
+pub async fn add_record(state: State<'_, AppState>, record: NewRecord) -> Result<i64, String> {
     let pool = get_pool(&state)?;
     db::add_record(&pool, record)
         .await
@@ -245,11 +329,8 @@ pub async fn reveal_in_explorer(
         return Err("文件不存在".into());
     }
 
-    let parent = file.parent().ok_or("无效路径")?;
-
     #[cfg(windows)]
     {
-        let _ = &parent;
         std::process::Command::new("explorer.exe")
             .arg(format!("/select,{}", path))
             .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
@@ -259,6 +340,7 @@ pub async fn reveal_in_explorer(
 
     #[cfg(not(windows))]
     {
+        let parent = file.parent().ok_or("无效路径")?;
         std::process::Command::new("xdg-open")
             .arg(parent)
             .spawn()

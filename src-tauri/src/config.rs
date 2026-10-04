@@ -1,35 +1,37 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+/// 运行时存储配置。SQLite 为本地单文件，路径由 data_dir 决定。
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DbConfig {
-    pub host: String,
-    pub port: u16,
-    pub user: String,
-    pub password: String,
-    pub database: String,
+pub struct AppConfig {
+    /// SQLite 数据库所在目录
+    pub data_dir: PathBuf,
+    /// 快照导出目录（通常设为坚果云同步文件夹）。None 表示不导出
+    #[serde(default)]
+    pub snapshot_dir: Option<PathBuf>,
+    /// 快照保留份数，超出后删除最旧的
+    #[serde(default = "default_keep_snapshots")]
+    pub keep_snapshots: usize,
 }
 
-impl Default for DbConfig {
+fn default_keep_snapshots() -> usize {
+    10
+}
+
+impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            host: "127.0.0.1".into(),
-            port: 3306,
-            user: "root".into(),
-            password: String::new(),
-            database: "process".into(),
+            data_dir: default_data_dir(),
+            snapshot_dir: None,
+            keep_snapshots: default_keep_snapshots(),
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct LibraryConfig {
-    /// 已添加的媒体库目录（绝对路径）
-    #[serde(default)]
-    pub folders: Vec<String>,
-    /// 手动指定的 PotPlayer 可执行文件路径，None 表示自动探测
-    #[serde(default)]
-    pub potplayer_path: Option<String>,
+impl AppConfig {
+    pub fn database_path(&self) -> PathBuf {
+        self.data_dir.join("data.sqlite")
+    }
 }
 
 fn config_dir() -> PathBuf {
@@ -42,22 +44,37 @@ fn config_path() -> PathBuf {
     config_dir().join("config.json")
 }
 
-/// 媒体库配置独立于 DbConfig。
-/// 前端“断开”按钮会以空值覆写 config.json，若把 folders 放进 DbConfig 会被一并清空。
+/// 媒体库配置独立于存储配置：
+/// 旧「断开」按钮会以空值覆写 config.json，若把 folders 放进去会被连带清空。
 fn library_config_path() -> PathBuf {
     config_dir().join("library.json")
 }
 
-pub fn load_config() -> Option<DbConfig> {
-    let path = config_path();
-    if !path.exists() {
-        return None;
-    }
-    let content = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&content).ok()
+pub fn default_data_dir() -> PathBuf {
+    config_dir()
 }
 
-pub fn save_config(config: &DbConfig) -> anyhow::Result<()> {
+/// 旧版 config.json 存的是扁平的 MySQL 结构，且含明文密码。
+/// 切换到 SQLite 后该结构不再被识别，这里只做只读检测，
+/// 供设置页提示用户手动清理磁盘上的遗留凭据。
+pub fn legacy_mysql_config_present() -> bool {
+    let Ok(content) = std::fs::read_to_string(config_path()) else {
+        return false;
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) else {
+        return false;
+    };
+    value.get("host").is_some() && value.get("password").is_some()
+}
+
+pub fn load_app_config() -> AppConfig {
+    match std::fs::read_to_string(config_path()) {
+        Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+        Err(_) => AppConfig::default(),
+    }
+}
+
+pub fn save_app_config(config: &AppConfig) -> anyhow::Result<()> {
     let dir = config_dir();
     std::fs::create_dir_all(&dir)?;
     let content = serde_json::to_string_pretty(config)?;
@@ -78,4 +95,60 @@ pub fn save_library_config(config: &LibraryConfig) -> anyhow::Result<()> {
     let content = serde_json::to_string_pretty(config)?;
     std::fs::write(library_config_path(), content)?;
     Ok(())
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct LibraryConfig {
+    /// 已添加的媒体库目录（绝对路径）
+    #[serde(default)]
+    pub folders: Vec<String>,
+    /// 手动指定的 PotPlayer 可执行文件路径，None 表示自动探测
+    #[serde(default)]
+    pub potplayer_path: Option<String>,
+}
+
+pub fn ensure_dir(path: &Path) -> anyhow::Result<()> {
+    std::fs::create_dir_all(path)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+#[test]
+    fn app_config_tolerates_legacy_config_json() {
+        // 旧 config.json 是扁平的 MySQL 结构（含明文密码），
+        // 反序列化到 AppConfig 必须失败并回落默认值，而不是 panic
+        let legacy = r#"{"host":"h","port":3306,"user":"u","password":"p","database":"d"}"#;
+        let parsed: Result<AppConfig, _> = serde_json::from_str(legacy);
+        assert!(parsed.is_err(), "旧结构不应被误认作 AppConfig");
+        assert!(AppConfig::default().database_path().ends_with("data.sqlite"));
+    }
+
+    #[test]
+    fn app_config_roundtrip() {
+        let mut c = AppConfig::default();
+        c.keep_snapshots = 3;
+        c.snapshot_dir = Some(PathBuf::from(r"D:\Nutstore\process"));
+        let json = serde_json::to_string(&c).unwrap();
+        let back: AppConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.keep_snapshots, 3);
+        assert_eq!(back.snapshot_dir, c.snapshot_dir);
+        assert_eq!(back.data_dir, c.data_dir);
+    }
+
+    #[test]
+    fn keep_snapshots_defaults_when_absent() {
+        let c: AppConfig = serde_json::from_str(r#"{"data_dir":"D:\\x"}"#).unwrap();
+        assert_eq!(c.keep_snapshots, 10);
+        assert!(c.snapshot_dir.is_none());
+    }
+
+    #[test]
+    fn library_config_defaults_when_empty() {
+        let c: LibraryConfig = serde_json::from_str("{}").unwrap();
+        assert!(c.folders.is_empty());
+        assert!(c.potplayer_path.is_none());
+    }
 }

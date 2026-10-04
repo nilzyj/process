@@ -75,12 +75,24 @@ export interface Stats {
   };
 }
 
-export interface DbConfig {
-  host: string;
-  port: number;
-  user: string;
-  password: string;
-  database: string;
+export interface AppConfig {
+  data_dir: string;
+  snapshot_dir: string | null;
+  keep_snapshots: number;
+}
+
+export interface StorageInfo {
+  database_path: string;
+  snapshot_dir: string | null;
+  record_count: number;
+}
+
+export interface SnapshotInfo {
+  path: string;
+  name: string;
+  size_bytes: number;
+  /** Unix 秒 */
+  modified: number;
 }
 
 export interface VideoFile {

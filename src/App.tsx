@@ -1,42 +1,60 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import type { DbConfig } from './types';
-import SetupPage from './components/SetupPage';
+import type { StorageInfo } from './types';
 import Home from './pages/Home';
 
 const Stats = lazy(() => import('./pages/Stats'));
 const Library = lazy(() => import('./pages/Library'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 import './App.css';
 
-type Page = 'home' | 'stats' | 'library';
+type Page = 'home' | 'stats' | 'library' | 'settings';
 
 export default function App() {
-  const [connected, setConnected] = useState(false);
+  // 本地 SQLite 无「连接」概念：init_storage 失败只可能是磁盘/权限问题
+  const [ready, setReady] = useState(false);
+  const [fatal, setFatal] = useState('');
+  const [info, setInfo] = useState<StorageInfo | null>(null);
   const [page, setPage] = useState<Page>('home');
 
   useEffect(() => {
-    const check = async () => {
+    const init = async () => {
       try {
-        const config = await invoke<DbConfig | null>('get_config');
-        if (config) {
-          await invoke<string>('init_db', { config });
-          setConnected(true);
-        } else {
-          // 媒体库不依赖数据库，未配置 DB 时默认落在这一页
-          setPage('library');
-        }
-      } catch {
-        setPage('library');
+        const i = await invoke<StorageInfo>('init_storage');
+        setInfo(i);
+        setReady(true);
+      } catch (e) {
+        setFatal(String(e));
       }
     };
-    check();
+    init();
   }, []);
 
-  const handleConnected = () => setConnected(true);
+  if (fatal) {
+    return (
+      <div className="setup-page">
+        <div className="setup-card">
+          <h2>无法打开本地数据库</h2>
+          <p style={{ color: 'var(--danger)', wordBreak: 'break-all' }}>{fatal}</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+            请检查目录权限与磁盘空间。若数据目录被坚果云同步，请把它移出同步目录后再试。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  // 主页与统计依赖数据库；媒体库始终可用
-  const showSetup = !connected && (page === 'home' || page === 'stats');
+  if (!ready) {
+    return (
+      <div className="setup-page">
+        <div className="setup-card">
+          <div className="loading-spinner" />
+          <p>正在打开本地数据库...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-layout">
@@ -52,33 +70,24 @@ export default function App() {
           媒体库
         </button>
         <div style={{ flex: 1 }} />
-        {connected ? (
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={async () => {
-              await invoke('save_config', { config_data: { host: '', port: 3306, user: '', password: '', database: '' } });
-              setConnected(false);
-              setPage('library');
-            }}
-          >
-            断开
-          </button>
-        ) : (
-          <button className="btn btn-secondary btn-sm" onClick={() => setPage('home')}>
-            连接数据库
-          </button>
-        )}
+        <span className="app-record-count">{info?.record_count ?? 0} 条</span>
+        <button
+          className={`tab-btn ${page === 'settings' ? 'active' : ''}`}
+          onClick={() => setPage('settings')}
+        >
+          设置
+        </button>
       </header>
 
       <div className="app-content">
-        {showSetup ? (
-          <SetupPage onConnected={handleConnected} onSkip={() => setPage('library')} />
-        ) : page === 'home' ? (
-          <Home connected={connected} />
+        {page === 'home' ? (
+          <Home />
         ) : page === 'stats' ? (
           <Suspense fallback={null}><Stats /></Suspense>
-        ) : (
+        ) : page === 'library' ? (
           <Suspense fallback={null}><Library /></Suspense>
+        ) : (
+          <Suspense fallback={null}><Settings /></Suspense>
         )}
       </div>
     </div>

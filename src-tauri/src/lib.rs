@@ -4,6 +4,7 @@ mod db;
 mod models;
 mod player;
 mod scan;
+mod snapshot;
 
 use std::sync::{Arc, Mutex, RwLock};
 use commands::AppState;
@@ -29,30 +30,28 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            // Pre-connect to DB in background while page loads
-            if let Some(config) = config::load_config() {
-                let pool_arc = app.state::<AppState>().pool.clone();
-                let cached_arc = app.state::<AppState>().cached_records.clone();
-                tauri::async_runtime::spawn(async move {
-                    if let Ok(pool) = db::connect(&config).await {
-                        *pool_arc.lock().unwrap() = Some(pool.clone());
-                        // Pre-fetch default query (status="进行中") into cache
-                        let filter = models::RecordFilter {
-                            search: None,
-                            media_type: None,
-                            status: Some("进行中".to_string()),
-                            tag: None,
-                            end_time_start: None,
-                            end_time_end: None,
-                            page: Some(1),
-                            page_size: Some(200),
-                        };
-                        if let Ok(result) = db::list_records(&pool, filter).await {
-                            *cached_arc.lock().unwrap() = Some(result);
-                        }
+            // 后台打开本地 SQLite，同时预取默认查询（status="进行中"）
+            // Arc 必须在 spawn 前克隆出State 引用不能跨 await
+            let pool_arc = app.state::<AppState>().pool.clone();
+            let cached_arc = app.state::<AppState>().cached_records.clone();
+            tauri::async_runtime::spawn(async move {
+                if let Ok(pool) = db::connect(&config::load_app_config()).await {
+                    *pool_arc.lock().unwrap() = Some(pool.clone());
+                    let filter = models::RecordFilter {
+                        search: None,
+                        media_type: None,
+                        status: Some("进行中".to_string()),
+                        tag: None,
+                        end_time_start: None,
+                        end_time_end: None,
+                        page: Some(1),
+                        page_size: Some(200),
+                    };
+                    if let Ok(result) = db::list_records(&pool, filter).await {
+                        *cached_arc.lock().unwrap() = Some(result);
                     }
-                });
-            }
+                }
+            });
             Ok(())
         })
         .on_page_load(|webview, payload| {
@@ -66,10 +65,15 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            commands::test_connection,
-            commands::get_config,
-            commands::save_config,
-            commands::init_db,
+            commands::init_storage,
+            commands::get_storage_info,
+            commands::get_app_config,
+            commands::save_app_config,
+            commands::legacy_credentials_present,
+            commands::export_snapshot,
+            commands::list_snapshots,
+            commands::restore_snapshot,
+            commands::import_records,
             commands::list_records,
             commands::get_record,
             commands::add_record,

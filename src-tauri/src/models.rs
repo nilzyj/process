@@ -6,6 +6,9 @@ pub struct Record {
     pub record_name: String,
     pub season: Option<i32>,
     pub remark: Option<String>,
+    /// 序列化名沿用前端契约的 media_type；
+    /// alias 让导入侧也接受 MySQL 导出的 "type" 键，避免整列静默丢失。
+    #[serde(alias = "type")]
     pub media_type: Option<String>,
     pub status: Option<String>,
     pub end_time: Option<String>,
@@ -17,11 +20,12 @@ pub struct Record {
     pub modify_time: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NewRecord {
     pub record_name: String,
     pub season: Option<i32>,
     pub remark: Option<String>,
+    #[serde(alias = "type")]
     pub media_type: Option<String>,
     pub status: Option<String>,
     pub end_time: Option<String>,
@@ -32,12 +36,13 @@ pub struct NewRecord {
     pub year: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UpdateRecord {
     pub id: i64,
     pub record_name: String,
     pub season: Option<i32>,
     pub remark: Option<String>,
+    #[serde(alias = "type")]
     pub media_type: Option<String>,
     pub status: Option<String>,
     pub end_time: Option<String>,
