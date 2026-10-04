@@ -83,6 +83,39 @@ export interface DbConfig {
   database: string;
 }
 
+export interface VideoFile {
+  path: string;
+  name: string;
+  size: number;
+  /** Unix 秒 */
+  mtime: number;
+}
+
+export interface ScanResult {
+  videos: VideoFile[];
+  /** 已配置但无法访问的目录 */
+  missing: string[];
+  /** 因权限或 I/O 错误跳过的文件数 */
+  skipped: number;
+}
+
+export interface LibraryConfig {
+  folders: string[];
+  potplayer_path: string | null;
+}
+
+export function formatBytes(bytes: number): string {
+  if (!bytes || bytes < 0) return '--';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)} ${units[i]}`;
+}
+
 export interface TypeStyle {
   icon: string;
   label: string;

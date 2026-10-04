@@ -170,3 +170,23 @@ pub struct PaginatedResult {
     pub records: Vec<Record>,
     pub total: i64,
 }
+
+/// 扫描到的一个本地视频文件
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VideoFile {
+    pub path: String,
+    /// 显示用名称：去扩展名 + 下划线转空格
+    pub name: String,
+    pub size: u64,
+    /// Unix 秒
+    pub mtime: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScanResult {
+    pub videos: Vec<VideoFile>,
+    /// 已配置但无法访问的目录
+    pub missing: Vec<String>,
+    /// 因权限或 I/O 错误跳过的文件数
+    pub skipped: usize,
+}

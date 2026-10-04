@@ -4,9 +4,11 @@ import type { DbConfig } from '../types';
 
 interface Props {
   onConnected: (config: DbConfig) => void;
+  /** 用户选择暂不配置数据库（媒体库不依赖数据库） */
+  onSkip?: () => void;
 }
 
-export default function SetupPage({ onConnected }: Props) {
+export default function SetupPage({ onConnected, onSkip }: Props) {
   const [config, setConfig] = useState<DbConfig>({
     host: '8.136.136.131',
     port: 3307,
@@ -92,6 +94,11 @@ export default function SetupPage({ onConnected }: Props) {
           <button className="btn btn-primary" onClick={handleConnect} disabled={testing}>
             {testing ? '连接中...' : '连接'}
           </button>
+          {onSkip && (
+            <button className="btn btn-secondary" onClick={onSkip}>
+              暂不配置
+            </button>
+          )}
         </div>
       </div>
     </div>

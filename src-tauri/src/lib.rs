@@ -2,8 +2,10 @@ mod commands;
 mod config;
 mod db;
 mod models;
+mod player;
+mod scan;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use commands::AppState;
 use tauri::webview::PageLoadEvent;
 use tauri::Manager;
@@ -13,9 +15,11 @@ pub fn run() {
     let state = AppState {
         pool: Arc::new(Mutex::new(None)),
         cached_records: Arc::new(Mutex::new(None)),
+        videos: Arc::new(RwLock::new(Vec::new())),
     };
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -73,6 +77,14 @@ pub fn run() {
             commands::delete_record,
             commands::get_stats,
             commands::get_cached_records,
+            commands::get_library_config,
+            commands::save_library_config,
+            commands::rescan_library,
+            commands::add_library_folder,
+            commands::remove_library_folder,
+            commands::play_video,
+            commands::reveal_in_explorer,
+            commands::locate_potplayer,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
