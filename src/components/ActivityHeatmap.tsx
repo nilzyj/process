@@ -4,6 +4,13 @@ interface Props {
   data: { date: string; count: number }[];
 }
 
+// GitHub 风格绿色梯度。0 用 CSS 变量跟随底色，避免热力图出现一块异色底板。
+const HEAT_COLORS = ['#0e4429', '#006d32', '#26a641', '#39d353'];
+
+// 必须与 App.css 里 .hm-cell 的 width + .hm-grid 的 gap 保持一致，
+// 否则月份标签的水平偏移会和实际格子列错位。
+const HM_STEP = 17;
+
 export default function ActivityHeatmap({ data }: Props) {
   const countMap = useMemo(() => {
     const m = new Map<string, number>();
@@ -39,13 +46,12 @@ export default function ActivityHeatmap({ data }: Props) {
   }, [countMap]);
 
   const getColor = (count: number) => {
-    if (maxCount === 0) return '#161b22';
+    if (maxCount === 0 || count === 0) return 'var(--heat-empty)';
     const r = count / maxCount;
-    if (r === 0) return '#161b22';
-    if (r <= 0.25) return '#0e4429';
-    if (r <= 0.5) return '#006d32';
-    if (r <= 0.75) return '#26a641';
-    return '#39d353';
+    if (r <= 0.25) return HEAT_COLORS[0];
+    if (r <= 0.5) return HEAT_COLORS[1];
+    if (r <= 0.75) return HEAT_COLORS[2];
+    return HEAT_COLORS[3];
   };
 
   const months = useMemo(() => {
@@ -70,7 +76,7 @@ export default function ActivityHeatmap({ data }: Props) {
           <span
             key={m.label}
             className="hm-month-label"
-            style={{ marginLeft: i === 0 ? 0 : (m.col - months[i - 1].col) * 14 }}
+            style={{ marginLeft: i === 0 ? 0 : (m.col - months[i - 1].col) * HM_STEP }}
           >
             {m.label}
           </span>
@@ -94,11 +100,10 @@ export default function ActivityHeatmap({ data }: Props) {
       </div>
       <div className="heatmap-legend">
         <span>少</span>
-        <div className="hm-legend-cell" style={{ background: '#161b22' }} />
-        <div className="hm-legend-cell" style={{ background: '#0e4429' }} />
-        <div className="hm-legend-cell" style={{ background: '#006d32' }} />
-        <div className="hm-legend-cell" style={{ background: '#26a641' }} />
-        <div className="hm-legend-cell" style={{ background: '#39d353' }} />
+        <div className="hm-legend-cell" style={{ background: 'var(--heat-empty)' }} />
+        {HEAT_COLORS.map((c) => (
+          <div key={c} className="hm-legend-cell" style={{ background: c }} />
+        ))}
         <span>多</span>
       </div>
     </div>

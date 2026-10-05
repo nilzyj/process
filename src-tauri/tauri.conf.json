@@ -19,7 +19,7 @@
         "center": true,
         "decorations": false,
         "visible": true,
-        "backgroundColor": "#000000"
+        "backgroundColor": "#16181c"
       },
       {
         "label": "main",
@@ -31,7 +31,7 @@
         "resizable": true,
         "fullscreen": false,
         "visible": false,
-        "backgroundColor": "#000000"
+        "backgroundColor": "#16181c"
       }
     ],
     "security": {

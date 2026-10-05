@@ -103,12 +103,25 @@ export interface VideoFile {
   mtime: number;
 }
 
-export interface ScanResult {
+export interface RejectedPath {
+  path: string;
+  reason: string;
+}
+
+/** 媒体库的完整状态。folders 为后端权威，前端据此同步目录 chip */
+export interface LibraryState {
+  folders: string[];
   videos: VideoFile[];
   /** 已配置但无法访问的目录 */
   missing: string[];
   /** 因权限或 I/O 错误跳过的文件数 */
   skipped: number;
+  /** 判定为非视频而排除的文件数（过小，或 TypeScript 声明文件） */
+  ignored: number;
+  /** 本次操作中新建的目录，仅添加时非空 */
+  created_dirs: string[];
+  /** 本次操作中被拒绝的路径及原因，仅添加时非空 */
+  rejected: RejectedPath[];
 }
 
 export interface LibraryConfig {

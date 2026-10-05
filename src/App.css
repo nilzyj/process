@@ -1,21 +1,70 @@
+/* 配色说明：背景不用纯黑。
+   纯黑(���000)在暗环境下会让文字产生光晕（halation），且卡片与页面底色
+   只差几个色阶、边界糊在一起。改为「抬底 + 拉层次」：
+   底色 #16181c，卡片 #262a31，逐级 +6 左右明度，边界靠 --border 分隔。
+   文字对比度按 WCAG AA（正文 4.5:1）重新定标，
+   旧的 #555 在纯黑上只有 2.4:1，是「内容不清晰」的主因。 */
 :root {
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-card: #111111;
-  --bg-hover: #1a1a1a;
-  --border: #222222;
-  --text-primary: #e0e0e0;
-  --text-secondary: #888888;
-  --text-muted: #555555;
+  /* 背景阶梯：页面 → 栏 → 卡片 → 浮层 */
+  --bg-primary: #16181c;
+  --bg-secondary: #1e2127;
+  --bg-card: #262a31;
+  --bg-card-alt: #21252b;
+  --bg-elevated: #2c313a;
+  --bg-hover: #31363f;
+
+  /* 描边：两张灰阶，弱分隔用 subtle，强调/焦点用 strong */
+  --border-subtle: #2a2f37;
+  --border: #3a4049;
+  --border-strong: #4d5560;
+
+  /* 文字：primary 14.8:1，secondary 8.1:1（对 --bg-primary）。
+     muted 取 #929aa6 而非刚好卡 AA 的值：它有 24 处用法，其中大量是
+     10px 角标且落在 card / elevated 上（最差 4.6:1），
+     10px 下 4.5:1 仍会发虚，这里留一档余量。 */
+  --text-primary: #e8eaed;
+  --text-secondary: #a8b0bb;
+  --text-muted: #929aa6;
+
   --accent: #e50914;
   --accent-hover: #ff1a1a;
+  /* 品牌红作文字时对比度不足（约 3.5:1），浅一档给文本用 */
+  --accent-text: #ff5561;
   --success: #22c55e;
-  --info: #3b82f6;
+  --info: #60a5fa;
   --warning: #f59e0b;
-  --danger: #ef4444;
+  --danger: #f87171;
+
+  /* 半透明叠加层：原先散落的 rgba(255,255,255,0.0x) 统一成具名档位。
+     只有实际用到的档位才留，避免留下无人引用的定义。 */
+  --fill-subtle: rgba(255, 255, 255, 0.04);
+  --fill-light: rgba(255, 255, 255, 0.07);
+
+  /* 热力图空格子：不能直接用 --bg-primary，否则与所在区块底色同色，
+     看起来像这一格「没渲染出来」。用半透明白叠出可辨的占位。 */
+  --heat-empty: rgba(255, 255, 255, 0.06);
+
+  --overlay: rgba(10, 12, 15, 0.72);
+
+  /* 字号阶梯：全局只在这里定档，各处一律引用变量。
+     整体比初版放大约一档（正文 13px → 15px），
+     过小的 9~10px 角标提升最明显——它们原先在暗底上既难读也易糊。
+     要再调整只改这一段。 */
+  --fs-2xs: 11px;   /* 极小角标，如扩展名标签 */
+  --fs-xs: 12px;    /* 辅助说明、次要标签 */
+  --fs-sm: 13px;    /* 表头、meta 行 */
+  --fs-md: 14px;    /* 卡片正文、按钮 */
+  --fs-base: 15px;  /* 列表主文本、表单控件 */
+  --fs-lg: 17px;    /* 弹窗标题、区块标题 */
+  --fs-xl: 20px;    /* 大数字、强调计数 */
+  --fs-2xl: 26px;   /* 统计卡主数字 */
+  --fs-icon: 52px;  /* 空状态图标 */
+
   --radius: 8px;
   --radius-sm: 4px;
-  --shadow: 0 2px 8px rgba(0,0,0,0.5);
+  /* 暗底上纯黑阴影几乎不可见，改用带一点冷调的深色 */
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.55);
 }
 
 * {
@@ -65,7 +114,7 @@ input, textarea, select {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #000;
+  background: var(--bg-primary);
 }
 
 .app-header {
@@ -79,9 +128,9 @@ input, textarea, select {
 }
 
 .app-title {
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   letter-spacing: 1px;
   margin-right: 8px;
 }
@@ -92,9 +141,9 @@ input, textarea, select {
   color: var(--text-secondary);
   padding: 6px 16px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--fs-base);
   border-radius: var(--radius);
-  transition: all 0.2s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .tab-btn:hover {
@@ -135,14 +184,14 @@ input, textarea, select {
 }
 
 .setup-card h2 {
-  font-size: 22px;
+  font-size: var(--fs-xl);
   margin-bottom: 8px;
   color: var(--text-primary);
 }
 
 .setup-card p {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--fs-base);
   margin-bottom: 24px;
 }
 
@@ -152,7 +201,7 @@ input, textarea, select {
 
 .form-group label {
   display: block;
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--text-secondary);
   margin-bottom: 6px;
   font-weight: 500;
@@ -167,7 +216,7 @@ input, textarea, select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: var(--fs-base);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -199,10 +248,10 @@ input, textarea, select {
   padding: 8px 20px;
   border: none;
   border-radius: var(--radius);
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
 }
 
 .btn-primary {
@@ -225,18 +274,9 @@ input, textarea, select {
   color: var(--text-primary);
 }
 
-.btn-danger {
-  background: var(--danger);
-  color: white;
-}
-
-.btn-danger:hover {
-  background: #dc2626;
-}
-
 .btn-sm {
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .btn-icon {
@@ -251,7 +291,7 @@ input, textarea, select {
   color: var(--text-muted);
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: all 0.2s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .btn-icon:hover {
@@ -278,7 +318,7 @@ input, textarea, select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: var(--fs-base);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -299,7 +339,7 @@ input, textarea, select {
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--fs-base);
   pointer-events: none;
 }
 
@@ -309,7 +349,7 @@ input, textarea, select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--fs-md);
   outline: none;
   cursor: pointer;
   min-width: 100px;
@@ -326,12 +366,52 @@ input, textarea, select {
   padding: 8px 0;
 }
 
+/* 列表单元格通用排版。原先 RecordRow 每个格子写一遍 inline style，
+   改字号时要逐处调整且极易漏改；集中到这里后只维护一处。 */
+.cell-center {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.cell-md {
+  font-size: var(--fs-md);
+}
+
+/* 空值占位 */
+.cell-empty {
+  color: var(--text-muted);
+}
+
+.record-tags {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.record-done {
+  color: var(--success);
+}
+
+/* 删除按钮常态即用危险色，不等到 hover 才变红 */
+.btn-delete {
+  color: var(--danger);
+}
+
+.btn-delete:hover {
+  color: #fff;
+  background: var(--danger);
+}
+
 .list-header {
   display: grid;
-  grid-template-columns: 1.5fr 70px 70px 60px 80px 1fr 70px 100px 70px;
+  grid-template-columns: 1.4fr 74px 74px 58px 88px 0.9fr 74px 132px 148px;
   gap: 4px;
   padding: 8px 16px;
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -342,13 +422,23 @@ input, textarea, select {
 
 .record-row {
   display: grid;
-  grid-template-columns: 1.5fr 70px 70px 60px 80px 1fr 70px 100px 70px;
+  grid-template-columns: 1.4fr 74px 74px 58px 88px 0.9fr 74px 132px 148px;
   gap: 4px;
   align-items: center;
   padding: 8px 16px;
   cursor: pointer;
   transition: background 0.15s;
-  border-bottom: 1px solid rgba(42,42,62,0.5);
+  border-bottom: 1px solid var(--border-subtle);
+  /* 行内含 9 个 grid 单元，提升为独立层让滚动时的重绘不必牵连整表 */
+  contain: layout style;
+}
+
+/* 翻页加载指示 */
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0 24px;
 }
 
 .record-row:hover {
@@ -356,7 +446,7 @@ input, textarea, select {
 }
 
 .record-name {
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
@@ -364,34 +454,34 @@ input, textarea, select {
   text-overflow: ellipsis;
 }
 
-.record-season {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 400;
-}
-
 .record-type-label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
-  padding: 2px 8px;
+  /* 上下内边距 2px 在 12px 字号下太紧，字形几乎贴到边框，
+     补到 3px 并给 1.25 行高 */
+  padding: 3px 8px;
+  line-height: 1.25;
   border-radius: 10px;
   text-align: center;
   display: inline-block;
   width: fit-content;
+  white-space: nowrap;
 }
 
 .record-status {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
-  padding: 2px 10px;
+  padding: 3px 10px;
+  line-height: 1.25;
   border-radius: 10px;
   text-align: center;
   display: inline-block;
   width: fit-content;
+  white-space: nowrap;
 }
 
 .record-progress {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-secondary);
   text-align: center;
 }
@@ -404,8 +494,24 @@ input, textarea, select {
 }
 
 .progress-text {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-secondary);
+}
+
+/* 进度 +1 时的反馈动画。用 key={current_episode} 让元素在数值变化时
+   重新挂载，动画随之重播一次并自动结束，不留常驻动画实例。
+   只动 transform 与 color（合成器属性），不碰 width/height，避免逐帧重排。
+   不要加 will-change：本选择器每个有进度的行都有一个实例（上限 200），
+   永久提升等于常驻 200 个合成层，得不偿失。 */
+.ep-bump {
+  display: inline-block;
+  animation: ep-bump 0.32s ease-out;
+}
+
+@keyframes ep-bump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); color: var(--info); }
+  100% { transform: scale(1); }
 }
 
 .progress-bar {
@@ -418,12 +524,15 @@ input, textarea, select {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #ff4d4d);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   border-radius: 2px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 0.6s 过长：与 0.32s 的数字动画不同步，且 width 过渡会持续触发重排 */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
 }
 
+/* 高光层常态静止，只提供 hover 时的扫光效果 */
 .progress-fill::after {
   content: '';
   position: absolute;
@@ -432,7 +541,14 @@ input, textarea, select {
   right: 0;
   bottom: 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: progress-shine 2s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+
+/* 高光扫过：原先是每行一个 infinite 动画，117 行就是 117 个常驻
+   transform 动画，合成线程永远无法空闲，滚动与点击都要和它抢帧。
+   改为只在 hover 当前行时播放，静止列表零动画开销。 */
+.record-row:hover .progress-fill::after {
+  animation: progress-shine 1.2s ease-in-out;
 }
 
 @keyframes progress-shine {
@@ -440,22 +556,30 @@ input, textarea, select {
   100% { transform: translateX(100%); }
 }
 
-.record-country {
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
-.record-endtime {
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
 .record-actions {
   display: flex;
   gap: 4px;
   justify-content: flex-end;
+}
+
+/* 进度步进按钮：比编辑/删除更强调，hover 时用强调色底 */
+.btn-step {
+  color: var(--accent-text);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
+
+.btn-step:hover {
+  color: #fff;
+  background: var(--accent);
+}
+
+.btn-step:disabled {
+  color: var(--text-muted);
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: none;
 }
 
 /* Modal */
@@ -465,7 +589,7 @@ input, textarea, select {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(10, 12, 15, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -480,7 +604,7 @@ input, textarea, select {
   width: 520px;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
@@ -491,7 +615,7 @@ input, textarea, select {
 }
 
 .modal-header h3 {
-  font-size: 18px;
+  font-size: var(--fs-lg);
 }
 
 .modal-body {
@@ -520,8 +644,8 @@ input, textarea, select {
 }
 
 .stats-card {
-  background: linear-gradient(145deg, var(--bg-card), #0d0d0d);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-card-alt));
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 16px 12px;
   text-align: center;
@@ -538,14 +662,14 @@ input, textarea, select {
 }
 
 .stats-card .count {
-  font-size: 26px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 .stats-card .label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
   margin-top: 4px;
   letter-spacing: 0.5px;
@@ -554,14 +678,14 @@ input, textarea, select {
 
 .stats-section {
   margin-bottom: 20px;
-  background: rgba(255,255,255,0.015);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 20px;
 }
 
 .stats-section h3 {
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 14px;
@@ -595,8 +719,10 @@ input, textarea, select {
 }
 
 .stats-bar-item .label {
-  width: 72px;
-  font-size: 12px;
+  /* 72px 只够三字标签，13px 字号下四字（如「纪录片」）会换行 */
+  width: 84px;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
   color: var(--text-secondary);
   text-align: right;
   flex-shrink: 0;
@@ -605,11 +731,11 @@ input, textarea, select {
 
 .stats-bar-track {
   flex: 1;
-  height: 20px;
-  background: rgba(255,255,255,0.03);
+  height: 24px;
+  background: var(--bg-primary);
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid var(--border-subtle);
 }
 
 .stats-bar-fill {
@@ -620,7 +746,7 @@ input, textarea, select {
   align-items: center;
   justify-content: flex-end;
   padding-right: 8px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: #fff;
   min-width: fit-content;
@@ -639,12 +765,12 @@ input, textarea, select {
 }
 
 .empty-state .icon {
-  font-size: 48px;
+  font-size: var(--fs-icon);
   opacity: 0.3;
 }
 
 .empty-state p {
-  font-size: 14px;
+  font-size: var(--fs-base);
 }
 
 .loading-spinner {
@@ -666,15 +792,23 @@ input, textarea, select {
   align-items: center;
   justify-content: space-between;
   padding: 8px 24px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
+/* 国家 / 完成时间列：内容可能比列宽长，截断而非撑破 grid */
+.record-country,
+.record-endtime {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .stats-error {
   color: var(--danger);
-  font-size: 14px;
+  font-size: var(--fs-base);
   text-align: center;
   padding: 40px;
 }
@@ -683,25 +817,28 @@ input, textarea, select {
 .stats-row {
   display: flex;
   gap: 16px;
+  align-items: flex-start;
 }
 
-.stats-sidebar {
+/* 热力图所在列：53 周约 901px，min-width:0 会让它被压到内容宽度以下，
+   导致右侧若干周被裁掉。给足下限，多余部分由 .heatmap-body 横向滚动 */
+.stats-main-col {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.stats-sidebar > .stats-section {
-  margin: 0;
-}
-
-.stats-section-half {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
+/* 热力图块自身左右不留白，避免再吃掉 40px 可用宽度 */
+.stats-section-flush {
+  padding-left: 16px;
+  padding-right: 8px;
+  overflow: hidden;
+}
+
 .stats-card .count.today {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 
@@ -722,7 +859,7 @@ input, textarea, select {
   gap: 1px;
   padding: 8px 4px;
   border-radius: 8px;
-  min-height: 44px;
+  min-height: 50px;
   cursor: default;
 }
 
@@ -731,14 +868,16 @@ input, textarea, select {
 }
 
 .mt-cell-month {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 500;
+  line-height: 1.4;
   color: var(--text-muted);
 }
 
 .mt-cell-count {
-  font-size: 16px;
+  font-size: var(--fs-lg);
   font-weight: 800;
+  line-height: 1.15;
 }
 
 .mt-month-records {
@@ -754,32 +893,46 @@ input, textarea, select {
 .heatmap {
   padding: 8px 0;
   display: inline-block;
+  /* 53 周 × 17px ≈ 901px，是固定宽度。祖先链上有多个 flex 容器
+     （.stats-row / .stats-section），不加这两条会被压缩并裁掉右侧若干周 */
+  flex-shrink: 0;
+  min-width: max-content;
 }
 
 .heatmap-months {
   display: flex;
   align-items: center;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
   margin-bottom: 3px;
-  height: 14px;
+  /* 原为 14px 固定高，放大到 11px 后行高需要 16px，
+     固定高度会把月份标签压扁。改为跟随字号 */
+  line-height: 1.4;
+  min-height: 16px;
 }
 
 .hm-month-label { white-space: nowrap; }
 
 .heatmap-body {
   display: flex;
+  /* 窄窗口时整块横向滚动，而不是把右侧的周裁掉 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
 }
 
 .hm-grid {
   display: flex;
   gap: 3px;
+  flex-shrink: 0;
 }
 
 .hm-col {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  /* 周列必须保持 14px，否则整块会被 flex 压扁导致格子重叠 */
+  flex-shrink: 0;
 }
 
 .hm-cell {
@@ -787,7 +940,7 @@ input, textarea, select {
   height: 14px;
   border-radius: 3px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform 0.12s, box-shadow 0.12s;
 }
 
 .hm-cell:hover {
@@ -802,7 +955,7 @@ input, textarea, select {
   align-items: center;
   gap: 4px;
   margin-top: 10px;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
 }
 
@@ -824,22 +977,46 @@ input, textarea, select {
 .yd-arrow {
   display: inline-block;
   width: 14px;
-  font-size: 9px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
 }
 
 .yd-children {
-  padding-left: 24px;
   margin-bottom: 4px;
 }
 
-.yd-child {
-  padding: 3px 0;
+/* 年代展开后的年份网格：对齐 .mt-month-grid 的自适应三列，
+   不用纵向全宽条形列表（那样每个年份都占满整行，纵向被拉得很长） */
+.yd-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 16px 12px 20px;
 }
 
-.yd-child .label {
-  font-size: 11px;
+.yd-year-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  min-height: 50px;
+  cursor: default;
+}
+
+.yd-year-label {
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  line-height: 1.4;
   color: var(--text-muted);
+}
+
+.yd-year-count {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  line-height: 1.15;
 }
 
 /* Country Cards */
@@ -858,9 +1035,11 @@ input, textarea, select {
   padding: 8px 12px;
   border: 1px solid;
   border-radius: 10px;
-  min-width: 54px;
+  /* 54px 放不下「中国大陆」这类四字国名（14px 下需 72px），
+     min-width 只保证下限，内容更长时由 flex 自动撑开 */
+  min-width: 56px;
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   cursor: default;
 }
 
@@ -870,15 +1049,17 @@ input, textarea, select {
 }
 
 .cc-name {
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 600;
-  line-height: 1;
+  /* 原 line-height:1，字号放大后上下笔画会与相邻的 .cc-count 贴住 */
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 .cc-count {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.3;
 }
 
 /* Pill Grid */
@@ -893,7 +1074,7 @@ input, textarea, select {
 
 .cloud-tag {
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
   white-space: nowrap;
 }
 
@@ -903,7 +1084,7 @@ input, textarea, select {
 }
 
 .cloud-count {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   opacity: 0.5;
   margin-left: 2px;
@@ -911,7 +1092,7 @@ input, textarea, select {
 }
 
 .tag-section-label {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   opacity: 0.5;
   margin-bottom: 4px;
   margin-top: 8px;
@@ -927,36 +1108,16 @@ input, textarea, select {
 
 
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  border: 1px solid;
-  border-radius: 20px;
-  overflow: hidden;
-  transition: all 0.2s;
-  cursor: default;
-}
-
-.pill.clickable {
-  cursor: pointer;
-}
-
-.pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
 .pill-popover {
   position: fixed;
   z-index: 999;
   min-width: 260px;
   max-width: 360px;
-  background: #1a1a2e;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 .pill-popover-arrow {
@@ -978,21 +1139,6 @@ input, textarea, select {
   overflow-y: auto;
 }
 
-.pill-name {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 10px 5px 12px;
-  white-space: nowrap;
-}
-
-.pill-count {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 5px 10px;
-  border-radius: 20px;
-  margin: 2px;
-}
-
 .series-grid {
   display: flex;
   flex-wrap: wrap;
@@ -1007,7 +1153,7 @@ input, textarea, select {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .series-card:hover {
@@ -1021,19 +1167,19 @@ input, textarea, select {
 }
 
 .series-name {
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 700;
 }
 
 .series-total {
-  font-size: 22px;
+  font-size: var(--fs-xl);
   font-weight: 800;
   opacity: 0.85;
 }
 
 .series-bar {
   height: 4px;
-  background: rgba(255,255,255,0.06);
+  background: var(--bg-primary);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -1047,7 +1193,7 @@ input, textarea, select {
 .series-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 
 .series-types {
@@ -1058,8 +1204,9 @@ input, textarea, select {
 }
 
 .series-type-pill {
-  font-size: 10px;
-  padding: 2px 8px;
+  font-size: var(--fs-2xs);
+  padding: 3px 8px;
+  line-height: 1.3;
   border: 1px solid;
   border-radius: 8px;
   white-space: nowrap;
@@ -1072,7 +1219,7 @@ input, textarea, select {
 .series-records {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1081,7 +1228,7 @@ input, textarea, select {
 }
 
 .series-loading {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
   text-align: center;
   padding: 8px;
@@ -1094,8 +1241,8 @@ input, textarea, select {
   padding: 4px 8px;
   border-left: 2px solid;
   border-radius: 3px;
-  background: rgba(255,255,255,0.02);
-  font-size: 12px;
+  background: var(--fill-subtle);
+  font-size: var(--fs-sm);
 }
 
 .sr-name {
@@ -1115,19 +1262,24 @@ input, textarea, select {
 }
 
 .sr-type, .sr-country {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
-  padding: 1px 6px;
+  /* 上下 1px 在 11px 字号下过紧，角标会显得压扁 */
+  padding: 2px 6px;
+  line-height: 1.3;
   border-radius: 4px;
-  background: rgba(255,255,255,0.04);
+  background: var(--fill-light);
+  white-space: nowrap;
 }
 
 .sr-status {
-  font-size: 10px;
-  padding: 1px 6px;
+  font-size: var(--fs-2xs);
+  padding: 2px 6px;
+  line-height: 1.3;
   border-radius: 4px;
-  color: #22c55e;
-  background: rgba(34,197,94,0.1);
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.14);
+  white-space: nowrap;
 }
 
 /* ============ 媒体库 ============ */
@@ -1153,7 +1305,7 @@ input, textarea, select {
 }
 
 .library-hint {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
 }
 
@@ -1163,7 +1315,7 @@ input, textarea, select {
   gap: 6px;
   max-width: 260px;
   padding: 4px 6px 4px 10px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-primary);
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -1175,7 +1327,7 @@ input, textarea, select {
 .folder-chip em {
   font-style: normal;
   color: var(--warning);
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 
 .folder-chip.missing {
@@ -1186,11 +1338,14 @@ input, textarea, select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  /* 20px 而非 18px：字号放到 --fs-xs(12px) 后，18px 的框里
+     ✕ 字形上下几乎顶到边缘，看着发挤 */
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   padding: 0;
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1;
   color: var(--text-secondary);
   background: transparent;
   border: none;
@@ -1224,67 +1379,196 @@ input, textarea, select {
   max-width: 360px;
 }
 
+/* 按目录分组的视频列表 */
+.video-groups {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.video-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.video-group-actions button {
+  padding: 3px 9px;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.video-group-actions button:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.video-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 18px 6px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.video-group-head:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.video-group-caret {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  width: 10px;
+  flex-shrink: 0;
+}
+
+.video-group-name {
+  flex: 1;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.video-group-count {
+  flex-shrink: 0;
+  /* 26px 装不下 12px 字号下的三位数（35px），改为 34px */
+  min-width: 34px;
+  padding: 1px 8px;
+  font-size: var(--fs-xs);
+  text-align: center;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.video-group .video-grid {
+  padding-top: 0;
+}
+
+/* 被拒绝的路径提示 */
+.library-rejected {
+  margin: 12px 18px 0;
+  padding: 10px 14px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+.library-rejected-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-sm);
+  color: var(--warning);
+}
+
+.library-rejected-clear {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-size: var(--fs-xs);
+  line-height: 1;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.library-rejected-clear:hover {
+  color: #fff;
+  background: var(--danger);
+}
+
+.library-rejected ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.library-rejected li {
+  margin-bottom: 4px;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+
+.library-rejected code {
+  margin-right: 8px;
+  padding: 1px 5px;
+  font-size: var(--fs-xs);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border-radius: 3px;
+  word-break: break-all;
+}
+
+.library-rejected li span {
+  color: var(--text-muted);
+}
+
 /* 视频网格 */
+/* 卡片为纯文字块：去掉占位图后收紧到 160px，一屏能看到更多条目 */
 .video-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
-  padding: 16px 24px 24px;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 6px;
+  padding: 0 18px 12px;
 }
 
 .video-card {
   position: relative;
-  padding: 10px;
+  padding: 8px 9px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-left: 2px solid transparent;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.12s, background 0.12s;
 }
 
 .video-card:hover {
   background: var(--bg-hover);
-  border-color: var(--accent);
+  border-color: var(--border);
+  border-left-color: var(--accent);
 }
 
-.video-thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 88px;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #161616, #0d0d0d);
-  border-radius: var(--radius-sm);
+.video-card.is-playing {
+  border-left-color: var(--accent);
+  background: var(--bg-hover);
 }
 
-.video-ext {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-}
-
-.video-playing {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin-top: -34px;
-  margin-left: -16px;
-  font-size: 32px;
-  color: var(--accent);
-  animation: video-pulse 0.6s ease-out;
-}
-
-@keyframes video-pulse {
-  from { opacity: 0; transform: scale(0.6); }
-  to { opacity: 1; transform: scale(1); }
-}
-
+/* 名称占主位，固定两行保证卡片等高 */
 .video-name {
-  font-size: 13px;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
   color: var(--text-primary);
-  line-height: 1.35;
-  height: 2.7em;
+  min-height: 2.6em;
+  max-height: 2.6em;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1294,10 +1578,52 @@ input, textarea, select {
 
 .video-meta {
   display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-  font-size: 11px;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.video-ext {
+  flex-shrink: 0;
+  padding: 0 4px;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  background: var(--fill-light);
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.video-size {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.video-date {
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 播放指示放在 meta 行内参与布局，避免绝对定位压住标题 */
+.video-playing {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: var(--fs-2xs);
+  color: var(--accent-text);
+  animation: video-pulse 0.6s ease-out;
+}
+
+@keyframes video-pulse {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* 右键菜单 */
@@ -1308,8 +1634,8 @@ input, textarea, select {
   z-index: 20;
   min-width: 168px;
   padding: 4px;
-  background: #1c1c1c;
-  border: 1px solid #333;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
 }
@@ -1318,7 +1644,7 @@ input, textarea, select {
   display: block;
   width: 100%;
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   text-align: left;
   color: var(--text-primary);
   background: transparent;
@@ -1334,9 +1660,9 @@ input, textarea, select {
 
 .video-context-folder {
   padding: 6px 10px 4px;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--text-muted);
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border-subtle);
   margin-top: 4px;
   word-break: break-all;
   max-height: 44px;
@@ -1351,14 +1677,14 @@ input, textarea, select {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.72);
+  background: var(--overlay);
   border: 2px dashed var(--accent);
   pointer-events: none;
 }
 
 .drop-hint {
   padding: 14px 26px;
-  font-size: 15px;
+  font-size: var(--fs-base);
   color: var(--text-primary);
   background: var(--bg-card);
   border: 1px solid var(--accent);
@@ -1368,7 +1694,7 @@ input, textarea, select {
 /* ============ 设置 ============ */
 
 .app-record-count {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
   margin-right: 12px;
 }
@@ -1389,7 +1715,7 @@ input, textarea, select {
 
 .settings-section h3 {
   margin: 0 0 14px;
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -1399,13 +1725,14 @@ input, textarea, select {
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
-  font-size: 13px;
+  font-size: var(--fs-md);
   flex-wrap: wrap;
 }
 
 .settings-label {
   flex-shrink: 0;
-  width: 72px;
+  /* 72px 在 13px 字号下装不下「快照保留份数」这类五字标签（需 65px + 余量） */
+  width: 84px;
   color: var(--text-secondary);
 }
 
@@ -1414,7 +1741,7 @@ input, textarea, select {
   min-width: 200px;
   padding: 5px 8px;
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-primary);
   background: var(--bg-primary);
   border: 1px solid var(--border);
@@ -1423,9 +1750,9 @@ input, textarea, select {
 }
 
 .settings-num {
-  width: 70px;
-  padding: 5px 8px;
-  font-size: 13px;
+  width: 78px;
+  padding: 6px 8px;
+  font-size: var(--fs-md);
   color: var(--text-primary);
   background: var(--bg-primary);
   border: 1px solid var(--border);
@@ -1439,7 +1766,7 @@ input, textarea, select {
 
 .settings-hint {
   margin: 8px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.6;
   color: var(--text-muted);
 }
@@ -1447,7 +1774,7 @@ input, textarea, select {
 .settings-msg {
   margin-bottom: 16px;
   padding: 10px 14px;
-  font-size: 13px;
+  font-size: var(--fs-md);
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1465,21 +1792,21 @@ input, textarea, select {
 .settings-warn strong {
   display: block;
   margin-bottom: 6px;
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--warning);
 }
 
 .settings-warn p {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1.7;
   color: var(--text-secondary);
 }
 
 .settings-warn code {
   padding: 1px 5px;
-  font-size: 11px;
-  background: rgba(0,0,0,0.3);
+  font-size: var(--fs-xs);
+  background: var(--bg-primary);
   border-radius: 3px;
 }
 
@@ -1502,13 +1829,13 @@ input, textarea, select {
 .settings-snapshot-name {
   flex: 1;
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-primary);
   word-break: break-all;
 }
 
 .settings-snapshot-meta {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
 }

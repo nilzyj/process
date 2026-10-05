@@ -37,7 +37,7 @@ export default function App() {
         <div className="setup-card">
           <h2>无法打开本地数据库</h2>
           <p style={{ color: 'var(--danger)', wordBreak: 'break-all' }}>{fatal}</p>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--fs-md)' }}>
             请检查目录权限与磁盘空间。若数据目录被坚果云同步，请把它移出同步目录后再试。
           </p>
         </div>

@@ -187,11 +187,32 @@ pub struct VideoFile {
     pub mtime: i64,
 }
 
+/// 媒体库的完整状态。
+///
+/// 刻意包含 folders：增删目录后后端是唯一权威，
+/// 若只返回扫描结果，前端的目录列表会与配置脱节（chip 删不掉/加不上）。
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScanResult {
+pub struct LibraryState {
+    /// 当前生效的库目录（已持久化）
+    pub folders: Vec<String>,
     pub videos: Vec<VideoFile>,
     /// 已配置但无法访问的目录
     pub missing: Vec<String>,
     /// 因权限或 I/O 错误跳过的文件数
     pub skipped: usize,
+    /// 判定为非视频而排除的文件数（过小，或 TypeScript 声明文件）
+    #[serde(default)]
+    pub ignored: usize,
+    /// 本次操作中新建的目录，仅 add_library_folder 非空
+    #[serde(default)]
+    pub created_dirs: Vec<String>,
+    /// 本次操作中被拒绝的路径及原因，仅 add_library_folder 非空
+    #[serde(default)]
+    pub rejected: Vec<RejectedPath>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RejectedPath {
+    pub path: String,
+    pub reason: String,
 }

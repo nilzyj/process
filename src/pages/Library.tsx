@@ -2,9 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { open } from '@tauri-apps/plugin-dialog';
-import type { LibraryConfig, ScanResult, VideoFile } from '../types';
+import type { LibraryConfig, LibraryState, RejectedPath, VideoFile } from '../types';
 import LibraryFolderBar from '../components/LibraryFolderBar';
-import VideoCard from '../components/VideoCard';
+import VideoGroup from '../components/VideoGroup';
+
+/**
+ * 超过该数量的分组默认全部折叠。
+ * 实测库里可达 1888 个分组、12680 个文件，全展开会同时挂载全部卡片而卡死。
+ */
+const AUTO_COLLAPSE_GROUPS = 40;
+
+/** 分组总数超过该值时不提供「全部展开」，避免一次性挂载上万卡片 */
+const SAFE_EXPAND_ALL = 1500;
 
 export default function Library() {
   const [videos, setVideos] = useState<VideoFile[]>([]);
@@ -15,22 +24,38 @@ export default function Library() {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+  const [rejected, setRejected] = useState<RejectedPath[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
-  const applyResult = useCallback((r: ScanResult) => {
+  const applyResult = useCallback((r: LibraryState) => {
+    // folders 必须一并更新，否则增删目录后 chip 与配置脱节（删不掉/加不上）
+    setFolders(r.folders);
     setVideos(r.videos);
     setMissing(r.missing);
     setScanning(false);
-    setNote(
-      r.skipped > 0 ? `已跳过 ${r.skipped} 个无法读取的文件` : '',
-    );
+
+    const notes: string[] = [];
+    if (r.created_dirs.length > 0) {
+      notes.push(`已创建 ${r.created_dirs.length} 个目录`);
+    }
+    if (r.ignored > 0) {
+      notes.push(`忽略 ${r.ignored} 个非视频文件`);
+    }
+    if (r.skipped > 0) {
+      notes.push(`跳过 ${r.skipped} 个无法读取的文件`);
+    }
+    if (r.rejected.length > 0) {
+      notes.push(`${r.rejected.length} 个路径无法使用`);
+    }
+    setNote(notes.join(' · '));
+    setRejected(r.rejected);
   }, []);
 
   const rescan = useCallback(async () => {
     setScanning(true);
     setError('');
     try {
-      applyResult(await invoke<ScanResult>('rescan_library'));
+      applyResult(await invoke<LibraryState>('rescan_library'));
     } catch (e) {
       setError(String(e));
       setScanning(false);
@@ -41,7 +66,7 @@ export default function Library() {
     setScanning(true);
     setError('');
     try {
-      applyResult(await invoke<ScanResult>('add_library_folder', { paths }));
+      applyResult(await invoke<LibraryState>('add_library_folder', { paths }));
     } catch (e) {
       setError(String(e));
       setScanning(false);
@@ -49,10 +74,16 @@ export default function Library() {
   }, [applyResult]);
 
   const removeFolder = useCallback(async (path: string) => {
+    // 立即从界面移除，避免重扫期间 chip 滞留造成的「点了没反应」错觉
+    setFolders((prev) => prev.filter((f) => f.toLowerCase() !== path.toLowerCase()));
     try {
-      applyResult(await invoke<ScanResult>('remove_library_folder', { path }));
+      applyResult(await invoke<LibraryState>('remove_library_folder', { path }));
     } catch (e) {
       setError(String(e));
+      // 后端失败则回滚，避免界面与真实配置不一致
+      invoke<LibraryConfig>('get_library_config')
+        .then((cfg) => setFolders(cfg.folders))
+        .catch(() => {});
     }
   }, [applyResult]);
 
@@ -72,7 +103,7 @@ export default function Library() {
         }
 
         if (cfg.folders.length > 0) {
-          applyResult(await invoke<ScanResult>('rescan_library'));
+          applyResult(await invoke<LibraryState>('rescan_library'));
         } else {
           setScanning(false);
         }
@@ -162,6 +193,76 @@ export default function Library() {
     );
   }, [videos, search]);
 
+  // 按文件所在目录分组。用户的典型用法是「一个目录 = 一部剧的全部视频」，
+  // 平铺后无法区分归属；path 里已含完整目录，前端分组即可，无需后端配合。
+  const groups = useMemo(() => {
+    const m = new Map<string, VideoFile[]>();
+    for (const v of filtered) {
+      const sep = Math.max(v.path.lastIndexOf('\\'), v.path.lastIndexOf('/'));
+      const dir = sep > 0 ? v.path.slice(0, sep) : v.path;
+      const arr = m.get(dir);
+      if (arr) arr.push(v);
+      else m.set(dir, [v]);
+    }
+
+    const list = [...m.entries()].map(([dir, items]) => ({
+      dir,
+      name: dir.split(/[\\/]/).filter(Boolean).pop() ?? dir,
+      items,
+    }));
+
+    // 同名末段会撞车（如两个剧都叫 S01），此时向前多取一段以示区分
+    const nameCount = new Map<string, number>();
+    for (const g of list) nameCount.set(g.name, (nameCount.get(g.name) ?? 0) + 1);
+
+    return list
+      .map((g) =>
+        (nameCount.get(g.name) ?? 0) > 1
+          ? {
+              ...g,
+              name: g.dir.split(/[\\/]/).filter(Boolean).slice(-2).join(' / '),
+            }
+          : g,
+      )
+      .sort((a, b) =>
+        a.dir.localeCompare(b.dir, undefined, { numeric: true, sensitivity: 'base' }),
+      );
+  }, [filtered]);
+
+  /**
+   * 只记录用户的显式选择，缺省值由分组规模派生。
+   * 这样不需要在 effect 里 setState（会多渲染一次），
+   * 也不会覆盖用户已经做过的操作。
+   */
+  const [overrides, setOverrides] = useState<Map<string, boolean>>(new Map());
+  const defaultCollapsed = groups.length > AUTO_COLLAPSE_GROUPS;
+
+  const isCollapsed = useCallback(
+    (dir: string) => overrides.get(dir) ?? defaultCollapsed,
+    [overrides, defaultCollapsed],
+  );
+
+  const collapsedCount = useMemo(
+    () => groups.filter((g) => isCollapsed(g.dir)).length,
+    [groups, isCollapsed],
+  );
+
+  const toggleGroup = useCallback(
+    (dir: string) => {
+      setOverrides((prev) => {
+        const next = new Map(prev);
+        next.set(dir, !(prev.get(dir) ?? groups.length > AUTO_COLLAPSE_GROUPS));
+        return next;
+      });
+    },
+    [groups.length],
+  );
+
+  const collapseAll = useCallback(
+    (v: boolean) => setOverrides(new Map(groups.map((g) => [g.dir, v]))),
+    [groups],
+  );
+
   return (
     <>
       <LibraryFolderBar
@@ -178,8 +279,25 @@ export default function Library() {
         <span>
           {search ? `${filtered.length} / ${videos.length} 个文件` : `共 ${videos.length} 个文件`}
         </span>
-        {note && <span style={{ color: 'var(--info)', fontSize: 12 }}>{note}</span>}
+        {note && <span style={{ color: 'var(--info)', fontSize: 'var(--fs-sm)' }}>{note}</span>}
       </div>
+
+      {rejected.length > 0 && (
+        <div className="library-rejected">
+          <div className="library-rejected-title">
+            ⚠️ 以下路径无法使用，未加入媒体库
+            <button className="library-rejected-clear" onClick={() => setRejected([])} title="关闭">✕</button>
+          </div>
+          <ul>
+            {rejected.map((r) => (
+              <li key={r.path}>
+                <code>{r.path}</code>
+                <span>{r.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="library-filter">
         <div className="search-wrapper">
@@ -214,11 +332,31 @@ export default function Library() {
           <p>没有匹配的文件</p>
         </div>
       ) : (
-        <div className="video-grid">
-          {filtered.map((v) => (
-            <VideoCard
-              key={v.path}
-              video={v}
+        <div className="video-groups">
+          {groups.length > 1 && (
+            <div className="video-group-actions">
+              <span>
+                {groups.length} 个目录
+                {collapsedCount > 0 && collapsedCount < groups.length && (
+                  <> · 已折叠 {collapsedCount} 个</>
+                )}
+              </span>
+              {/* 上万文件时全展开会一次挂载全部卡片，直接卡死，不提供该入口 */}
+              {filtered.length <= SAFE_EXPAND_ALL && (
+                <button onClick={() => collapseAll(false)}>全部展开</button>
+              )}
+              <button onClick={() => collapseAll(true)}>全部折叠</button>
+            </div>
+          )}
+
+          {groups.map((g) => (
+            <VideoGroup
+              key={g.dir}
+              name={g.name}
+              dir={g.dir}
+              items={g.items}
+              collapsed={isCollapsed(g.dir)}
+              onToggle={toggleGroup}
               onPlay={handlePlay}
               onReveal={handleReveal}
               onCopyPath={handleCopyPath}

@@ -31,8 +31,8 @@ export default function Stats() {
     <div className="stats-page">
       <SummaryCards stats={stats} />
       <div className="stats-row">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="stats-section" style={{ paddingRight: 0 }}>
+        <div className="stats-main-col">
+          <div className="stats-section stats-section-flush">
             <h3>活动热力图</h3>
             <ActivityHeatmap data={stats.daily_activity} />
           </div>
@@ -112,19 +112,19 @@ function YearDist({ stats }: { stats: StatsType }) {
               </div>
               {isOpen && (
                 <div className="yd-children">
-                  {d.years.map((yr) => {
-                    const childPct = Math.round((yr.count / d.total) * 100);
-                    return (
-                      <div key={yr.year} className="stats-bar-item yd-child">
-                        <span className="label">{yr.year}年</span>
-                        <div className="stats-bar-track">
-                          <div className="stats-bar-fill" style={{ width: `${childPct}%`, background: color, opacity: 0.7 }}>
-                            {yr.count}
-                          </div>
-                        </div>
+                  <div className="yd-year-grid">
+                    {d.years.map((yr) => (
+                      <div
+                        key={yr.year}
+                        className="yd-year-cell"
+                        style={{ background: `${color}15` }}
+                        title={`${yr.year}年: ${yr.count} 条（占本年代 ${Math.round((yr.count / d.total) * 100)}%）`}
+                      >
+                        <span className="yd-year-label">{yr.year}年</span>
+                        <span className="yd-year-count" style={{ color }}>{yr.count}</span>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -347,7 +347,11 @@ function TagDist({ stats }: { stats: StatsType }) {
     if (!popover) return;
     const handler = (e: MouseEvent) => {
       const el = e.target as HTMLElement;
-      if (!el.closest('.pill-popover') && !el.closest('.pill.clickable')) {
+      // 选择器必须与 renderTag 里实际渲染的 class 一致。
+      // 原先写的是 .pill.clickable，而渲染出来的是 .cloud-tag.clickable，
+      // 于是这个判断永远为真：点标签触发 mousedown 时先把 popover 关掉，
+      // 紧接着标签自身的 onClick 又按 toggle 逻辑处理，两次状态更新互相打架
+      if (!el.closest('.pill-popover') && !el.closest('.cloud-tag.clickable')) {
         setPopover(null);
         setRecords([]);
       }
